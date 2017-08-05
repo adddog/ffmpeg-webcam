@@ -1,0 +1,13 @@
+{
+  "name": "cms",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {},
+  "dependencies": {
+    "gl": "^4.0.4",
+    "jpeg-js": "^0.3.3",
+    "libjpeg": "^3.0.0",
+    "typedarray-to-buffer": "^3.1.2",
+    "ws": "^3.1.0"
+  }
+}

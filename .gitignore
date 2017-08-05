@@ -1,0 +1,13 @@
+.env
+node_modules
+package-lock.json
+
+client/dist/*.js
+client/dist/*.map
+client/dist/*.css
+client/dist/images
+client/dist/fonts/
+client/dist/index.html
+server/static
+build
+*.mkv
