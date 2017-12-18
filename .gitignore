@@ -11,3 +11,4 @@ client/dist/index.html
 server/static
 build
 *.mkv
+*.mp4
