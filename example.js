@@ -1,17 +1,16 @@
 const raf = require("raf")
 var toBuffer = require("typedarray-to-buffer")
 const ffmpeg = require("./lib/ffmpeg")
+const GL = require("./lib/gl")
+const WIDTH = 640
+const HEIGHT = 480
 var now = require("performance-now")
-const W = 352
-const H = 288
-var GL = require("gl")(W, H)
 const WebcamWebsocket = require("./index")
 const WEBCAM_IP = "10.0.1.7"
 const WEBCAM_IP_2 = "10.0.1.9"
 const STREAM_IP = "10.0.1.8"
 const web = WebcamWebsocket()
 
-const gl = GL
 let FFMPEG
 function startStream(options) {
   let maxrate = options.maxrate || 400
@@ -27,16 +26,11 @@ function startStream(options) {
   })
 }
 
-const ff = web.connect(GL, WEBCAM_IP, {
+/*const ff2 = web.connect(GL, WEBCAM_IP_2, {
   ip: STREAM_IP,
   port: "1337",
-})
-
-const ff2 = web.connect(GL, WEBCAM_IP_2, {
-  ip: STREAM_IP,
-  port: "1337",
-})
-
+})*/
+/*
 const SHADER_FRAGMENT_YCBCRTORGBA = [
     "precision lowp float;",
     "uniform sampler2D tex0;",
@@ -75,9 +69,9 @@ const createTexture = (index, name) => {
   gl.uniform1i(gl.getUniformLocation(program, name), index)
 
   return texture
-}
+}*/
 
-
+/*
 const renderWebgl = (tex0B, tex1B) => {
   var gl = GL
 
@@ -124,8 +118,8 @@ const compileShader = (type, source) => {
   }
 
   return shader
-}
-
+}*/
+/*
 const initWebgl = () => {
   // attempt to get a webgl context
   var gl = GL
@@ -163,7 +157,9 @@ const initWebgl = () => {
   var vertexAttr = gl.getAttribLocation(program, "vertex")
   gl.enableVertexAttribArray(vertexAttr)
   gl.vertexAttribPointer(vertexAttr, 2, gl.FLOAT, false, 0, 0)
-}
+}*/
+
+const gl = GL()
 
 var _t = now().toFixed(3)
 const fps = 2000
@@ -171,17 +167,26 @@ var handle = raf(function tick() {
   var start = now().toFixed(3)
 
   if (start - _t >= 80) {
-    if (ff.player.outBuffer && ff2.player.outBuffer) {
+    //&& ff2.player.outBuffer
+    if (ff.player.outBuffer ) {
       //console.log(ff2.player.outBuffer.buffer);
+      /*return gl.read(new Uint8Array(WIDTH * HEIGHT * 4))
+
       renderWebgl(ff.player.outBuffer, ff2.player.outBuffer)
       var pixels = new Uint8Array(W * H * 4)
-      GL.readPixels(0, 0, W, H, GL.RGBA, GL.UNSIGNED_BYTE, pixels)
-      FFMPEG.frame(toBuffer(pixels))
+      GL.readPixels(0, 0, W, H, GL.RGBA, GL.UNSIGNED_BYTE, pixels)*/
+      console.log("rea");
       //FFMPEG.frame(toBuffer(ff2.player.outBuffer))
     }
+      FFMPEG.frame(toBuffer(gl.read()))
     _t = start
   }
   raf(tick)
+})
+
+const ff = web.connect(gl, WEBCAM_IP_2, {
+  ip: STREAM_IP,
+  port: "1337",
 })
 
 startStream(
@@ -191,10 +196,10 @@ startStream(
       ip: STREAM_IP,
       port: "1337",
     },
-    { w: W, h: H }
+    { w: WIDTH, h: HEIGHT }
   )
 )
 
-initWebgl()
+//initWebgl()
 
 //startStream(Object.assign({}, ffmpegOptions, { w: W, h: H }))

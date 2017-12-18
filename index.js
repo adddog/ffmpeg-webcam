@@ -1,3 +1,3 @@
-const WebcamWebsocket = require('./lib/webcam-websocket')
+const WebcamWebsocket = require('./lib/webcam-websocket-regl')
 
 module.exports = WebcamWebsocket
