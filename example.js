@@ -2,8 +2,10 @@ const raf = require("raf")
 var toBuffer = require("typedarray-to-buffer")
 const ffmpeg = require("./lib/ffmpeg")
 const GL = require("./lib/gl")
-const WIDTH = 640
-const HEIGHT = 480
+/*const WIDTH = 640
+const HEIGHT = 480*/
+const WIDTH = 352
+const HEIGHT = 288
 var now = require("performance-now")
 const WebcamWebsocket = require("./index")
 const WEBCAM_IP = "10.0.1.7"
@@ -159,7 +161,10 @@ const initWebgl = () => {
   gl.vertexAttribPointer(vertexAttr, 2, gl.FLOAT, false, 0, 0)
 }*/
 
-const gl = GL()
+const gl = GL({
+  width: WIDTH,
+  height: HEIGHT,
+})
 
 var _t = now().toFixed(3)
 const fps = 2000
@@ -168,17 +173,16 @@ var handle = raf(function tick() {
 
   if (start - _t >= 80) {
     //&& ff2.player.outBuffer
-    if (ff.player.outBuffer ) {
+    if (ff.player.outBuffer) {
       //console.log(ff2.player.outBuffer.buffer);
       /*return gl.read(new Uint8Array(WIDTH * HEIGHT * 4))
 
       renderWebgl(ff.player.outBuffer, ff2.player.outBuffer)
       var pixels = new Uint8Array(W * H * 4)
       GL.readPixels(0, 0, W, H, GL.RGBA, GL.UNSIGNED_BYTE, pixels)*/
-      console.log("rea");
       //FFMPEG.frame(toBuffer(ff2.player.outBuffer))
     }
-      FFMPEG.frame(toBuffer(gl.read()))
+    FFMPEG.frame(toBuffer(gl.read(WIDTH, HEIGHT)))
     _t = start
   }
   raf(tick)
