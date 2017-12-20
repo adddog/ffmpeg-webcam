@@ -3,6 +3,7 @@ readline.emitKeypressEvents(process.stdin)
 process.stdin.setRawMode(true)
 const raf = require("raf")
 var toBuffer = require("typedarray-to-buffer")
+const fluentFF = require("fluent-ffmpeg")
 const ffmpeg = require("./lib/ffmpeg")
 const FB = require("./lib/fb")
 const GL = require("./lib/gl")
@@ -14,14 +15,14 @@ const HEIGHT = 480*/
 const WIDTH = 352
 const HEIGHT = 288
 
-const OFFLINE = false
+const OFFLINE = true
 
 const TCP = false
 const TCP_STREAM_NAME = "/webcam"
 
 var now = require("performance-now")
 const WebcamWebsocket = require("./index")
-const WEBCAM_IPS = ["10.0.1.9"] //, "10.0.1.3"
+const WEBCAM_IPS = ["10.0.1.7"] //, "10.0.1.3"
 const WEBCAM_IP = "10.0.1.7"
 const WEBCAM_IP_2 = "10.0.1.9"
 const STREAM_IP = "10.0.1.8"
@@ -278,6 +279,11 @@ process.stdin.on("keypress", (str, key) => {
 
   // User has triggered a keypress, now do whatever we want!
   // ...
+})
+
+const extra = fluentFF("gd.mp4").native()
+extra.on("data", function(chunk) {
+  console.log("ffmpeg just wrote " + chunk.length + " bytes")
 })
 
 //initWebgl()

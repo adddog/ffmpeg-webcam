@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {},
   "dependencies": {
+    "fluent-ffmpeg": "^2.1.2",
     "gl": "^4.0.4",
     "libjpeg": "^3.0.0",
     "performance-now": "^2.1.0",
