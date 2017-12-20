@@ -1,3 +1,6 @@
+const readline = require("readline")
+readline.emitKeypressEvents(process.stdin)
+process.stdin.setRawMode(true)
 const raf = require("raf")
 var toBuffer = require("typedarray-to-buffer")
 const ffmpeg = require("./lib/ffmpeg")
@@ -6,13 +9,16 @@ const GL = require("./lib/gl")
 const BITRATE_A = 128
 const BITRATE_V = 600
 const FPS = 30
-const WIDTH = 640
-const HEIGHT = 480
-/*const WIDTH = 352
-const HEIGHT = 288*/
+/*const WIDTH = 640
+const HEIGHT = 480*/
+const WIDTH = 352
+const HEIGHT = 288
+
+const OFFLINE = false
+
 var now = require("performance-now")
 const WebcamWebsocket = require("./index")
-const WEBCAM_IPS = ["10.0.1.9"]
+const WEBCAM_IPS = ["10.0.1.9", "10.0.1.3"]
 const WEBCAM_IP = "10.0.1.7"
 const WEBCAM_IP_2 = "10.0.1.9"
 const STREAM_IP = "10.0.1.8"
@@ -39,6 +45,16 @@ function startStream(options) {
   port: "1337",
 })*/
 
+const GL_UNIFORMS = {
+  slope: 0.1,
+  tolerance: 0.5,
+  keyIndex: 1,
+  keyColor: [0, 0, 0],
+  uSaturations: [1,1,1,1],
+
+  selectionIndex: 0,
+}
+
 const gl = GL({
   width: WIDTH,
   height: HEIGHT,
@@ -55,7 +71,7 @@ var _t = now().toFixed(3)
 var handle = raf(function tick() {
   var start = now().toFixed(3)
 
-  if (start - _t >= 25 && FFMPEG) {
+  if (start - _t >= 22 && FFMPEG) {
     //&& ff2.player.outBuffer
 
     if (WEBCAM_IPS.length == 1) {
@@ -80,6 +96,12 @@ var handle = raf(function tick() {
         gl.mergeStreams({
           tex0: connections[0].player.pixels,
           tex1: connections[1].player.pixels,
+          slope: GL_UNIFORMS.slope,
+          tolerance: GL_UNIFORMS.tolerance,
+          keyIndex: GL_UNIFORMS.keyIndex,
+          keyColor: GL_UNIFORMS.keyColor,
+          uSaturations: GL_UNIFORMS.uSaturations,
+
         })
         FFMPEG.frame(toBuffer(gl.read(WIDTH, HEIGHT)))
       }
@@ -114,25 +136,28 @@ function start() {
 
       var rtmpUrl = liveVideo.stream_url
       postId = liveVideo.id
-
-      console.log("postId", postId)
-
+      const _videoBitrate = ` -preset ultrafast -tune zerolatency  -b:v ${BITRATE_V}k -minrate ${BITRATE_V /
+        2}k  -maxrate ${BITRATE_V}k  -bufsize ${BITRATE_V}k`
+      const _options = OFFLINE
+        ? ` -f mpegts `
+        : ` -b:a ${BITRATE_A}k -c:v libx264 -profile:v baseline -pix_fmt yuv420p -g ${FPS *
+            2} -r ${FPS} -f flv `
       startStream(
         Object.assign(
           {},
           {
             ip: STREAM_IP,
             port: "1337",
-            format: "flv",
             //input: [],
             //input: ["-f", "lavfi", "-i", "anullsrc"],
-            input: ["-y", "-f", "avfoundation", "-i", ":2"],
+            input: OFFLINE
+              ? null
+              : ["-y", "-f", "avfoundation", "-i", ":2"],
             //input: ["-f", "alsa", "-ac", "1", "-ar", "44100" ,"-i", "hw:3"],
             //input: ["-i", "hw:1,0","-f alsa", "-ac", "2",],
-            options:
-              `-b:a ${BITRATE_A}k -c:v libx264 -profile:v baseline -pix_fmt yuv420p -g ${FPS * 2} -r ${FPS} -f flv -preset ultrafast -tune zerolatency  -b:v ${BITRATE_V}k -minrate ${BITRATE_V / 2}k  -maxrate ${BITRATE_V}k  -bufsize ${BITRATE_V}k`,
+            options: `${_options} ${_videoBitrate}`,
             //output: `"rtmp://a.rtmp.youtube.com/live2/f5v7-kfmq-27ce-9dft"`, //`"${rtmpUrl}"`,
-            output:`"${rtmpUrl}"`
+            output: OFFLINE ? null : `"${rtmpUrl}"`,
           },
           { w: WIDTH, h: HEIGHT }
         )
@@ -144,6 +169,87 @@ function start() {
 }
 
 start()
+// Start the keypress listener for the process
+process.stdin.on("keypress", (str, key) => {
+  console.log(key.name)
+  switch (key.name) {
+    case "q":
+      GL_UNIFORMS.tolerance = Math.min(
+        GL_UNIFORMS.tolerance + 0.05,
+        1
+      )
+      break
+    case "a":
+      GL_UNIFORMS.tolerance = Math.max(
+        GL_UNIFORMS.tolerance - 0.05,
+        0
+      )
+      break
+    case "w":
+      GL_UNIFORMS.slope = Math.min(GL_UNIFORMS.slope + 0.05, 1)
+      break
+    case "s":
+      GL_UNIFORMS.slope = Math.max(GL_UNIFORMS.slope - 0.05, 0)
+      break
+
+    case "t":
+      GL_UNIFORMS.keyColor = GL_UNIFORMS.keyColor.map(c =>
+        Math.min(c + 0.05, 1)
+      )
+      break
+    case "g":
+      GL_UNIFORMS.keyColor = GL_UNIFORMS.keyColor.map(c =>
+        Math.max(c - 0.05, 0)
+      )
+      break
+
+    case "y":
+      GL_UNIFORMS.uSaturations[
+        GL_UNIFORMS.selectionIndex
+      ] = Math.min(
+        GL_UNIFORMS.uSaturations[GL_UNIFORMS.selectionIndex] +
+          0.05,
+        4
+      )
+      break
+    case "h":
+      GL_UNIFORMS.uSaturations[
+        GL_UNIFORMS.selectionIndex
+      ] = Math.max(
+        GL_UNIFORMS.uSaturations[GL_UNIFORMS.selectionIndex] -
+          0.05,
+        0
+      )
+      break
+
+    case "i":
+      GL_UNIFORMS.keyIndex = GL_UNIFORMS.keyIndex === 0 ? 1 : 0
+      break
+
+    case "space":
+      GL_UNIFORMS.selectionIndex =
+        (GL_UNIFORMS.selectionIndex + 1) % WEBCAM_IPS.length
+      break
+  }
+
+  console.log("----Keys ----")
+  console.log(`q - (a) is tolerance`)
+  console.log(`w - (s) is slope`)
+  console.log(`t - (g) is color`)
+  console.log(`i is invert`)
+  console.log("\n")
+  console.log("GL_UNIFORMS-----")
+  console.log(GL_UNIFORMS)
+  console.log("\n")
+
+  // "Raw" mode so we must do our own kill switch
+  if (key.sequence === "\u0003") {
+    process.exit()
+  }
+
+  // User has triggered a keypress, now do whatever we want!
+  // ...
+})
 
 //initWebgl()
 
