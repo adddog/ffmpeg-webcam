@@ -1,0 +1,15 @@
+v=0
+o=Sam 3596614207 3596614207 IN IP4 40:6C:8F:4B:08:9A
+s=sam
+t=0 0
+b=AS:6
+b=TIAS:6
+a=maxprate:1.000000
+m=video 8554 RTP/AVP 96
+c=IN IP4 127.0.0.1
+b=AS:6
+b=TIAS:6
+a=maxprate:1
+a=rtpmap:96 H263-1998/90000
+a=cliprect:0,0,120,160
+a=framesize:96 160-120
