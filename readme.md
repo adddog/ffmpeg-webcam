@@ -19,3 +19,17 @@ ffserver -f ffserver.conf
 stream TCP has been seen to work. rtsp seems fastest.
 
 http://peterelsea.com/Maxtuts_jitter/Jitter_with_net_cameras.pdf
+
+
+Good settings for the room.
+Video background keyed out around people
+```
+{ slope: 0.15000000000000002,
+  tolerance: 0.4,
+  keyIndex: 1,
+  keyColor: [ 0.1499999999999997, 0.1499999999999997, 0.1499999999999997 ],
+  uSaturations: [ 1.05, 1, 1, 1 ],
+  selectionIndex: 0 }
+```
+
+python -m http.server 1111
