@@ -30,7 +30,7 @@ const TCP_STREAM_NAME = "/webcam"
 
 var now = require("performance-now")
 const WebcamWebsocket = require("./index")
-const WEBCAM_IPS = ["10.0.1.9", "10.0.1.3"] //, "10.0.1.3"
+const WEBCAM_IPS = ["10.0.1.9"] //, "10.0.1.3"
 const WEBCAM_IP = "10.0.1.7"
 const WEBCAM_IP_2 = "10.0.1.9"
 const STREAM_IP = "10.0.1.8"
@@ -145,10 +145,10 @@ var handle = raf(function tick() {
 
 const startFFMPEG = rtmpUrl => {
   const _videoBitrate = ` -preset ultrafast -tune zerolatency  -b:v ${BITRATE_V}k -minrate ${BITRATE_V /
-    2}k  -maxrate ${BITRATE_V}k  -bufsize ${BITRATE_V * 2}k`
+    2}k  -maxrate ${BITRATE_V}k  -bufsize ${BITRATE_V * 2}k -analyzeduration 1000000 -probesize 4096 `
 
   //-fflags nobuffer
-const _framerate = `-g ${Math.round(FPS * 4)} -r ${FPS} -framerate ${FPS} `
+const _framerate = `-g ${Math.round(FPS * 2)} -r ${FPS} -framerate ${FPS} `
   const _options = OFFLINE
     ? `${TCP
         ? " -acodec aac -strict -2 -ar 48000 -ab 96k " //TCP
