@@ -1,6 +1,10 @@
 const readline = require("readline")
+var toArrayBuffer = require("to-array-buffer")
+var tou8 = require("buffer-to-uint8array")
+
 readline.emitKeypressEvents(process.stdin)
 process.stdin.setRawMode(true)
+const fs = require("fs")
 const raf = require("raf")
 var toBuffer = require("typedarray-to-buffer")
 const fluentFF = require("fluent-ffmpeg")
@@ -15,7 +19,7 @@ const HEIGHT = 480*/
 const WIDTH = 352
 const HEIGHT = 288
 //!!!!!!!!
-const OFFLINE = false
+const OFFLINE = true
 //!!!!!!!!
 const FB_PRIVACY = "private"
 //SAM
@@ -30,7 +34,7 @@ const TCP_STREAM_NAME = "/webcam"
 
 var now = require("performance-now")
 const WebcamWebsocket = require("./index")
-const WEBCAM_IPS = ["10.0.1.9","10.0.1.7"] //, "10.0.1.3"
+const WEBCAM_IPS = ["10.0.1.9"] //, "10.0.1.3"//"10.0.1.9", "10.0.1.7"
 const WEBCAM_IP = "10.0.1.7"
 const WEBCAM_IP_2 = "10.0.1.9"
 const STREAM_IP = "10.0.1.8"
@@ -66,7 +70,7 @@ const GL_UNIFORMS = {
   keySlope: 0.1,
   keyAmount: 0.5,
   trailIndex: 0,
-  trailAmount: .3,
+  trailAmount: 0.3,
   keyIndex: 1,
   keyColor: [0, 0, 0],
   uSaturations: [1, 1, 1, 1],
@@ -88,6 +92,18 @@ const connections = WEBCAM_IPS.map(ip =>
   })
 )
 
+const VIDEO_TEX = gl.regl.texture({
+  format: "rgba",
+  width: HEIGHT,
+  type: "uint8",
+  mag: "nearest",
+  min: "nearest",
+  wrapS: "clamp",
+  wrapT: "clamp",
+  height: HEIGHT,
+})
+let _READY = false
+
 var _t = now().toFixed(3)
 var handle = raf(function tick() {
   var start = now().toFixed(3)
@@ -96,9 +112,10 @@ var handle = raf(function tick() {
     //&& ff2.player.outBuffer
 
     if (WEBCAM_IPS.length == 1) {
-      if (connections[0].player.outBuffer) {
+      if (connections[0].player.outBuffer && _READY) {
         gl.drawSingle({
           tex0: connections[0].player.pixels,
+          overlay: VIDEO_TEX,
         })
         FFMPEG.frame(toBuffer(gl.read(WIDTH, HEIGHT)))
       }
@@ -122,7 +139,7 @@ var handle = raf(function tick() {
           keyAmount: GL_UNIFORMS.keyAmount,
           trailAmount: GL_UNIFORMS.trailAmount,
           keyIndex: GL_UNIFORMS.keyIndex,
-          trailIndex:GL_UNIFORMS.trailIndex,
+          trailIndex: GL_UNIFORMS.trailIndex,
           keyColor: GL_UNIFORMS.keyColor,
           uSaturations: GL_UNIFORMS.uSaturations,
         })
@@ -131,6 +148,7 @@ var handle = raf(function tick() {
         })
         FFMPEG.frame(toBuffer(gl.read(WIDTH, HEIGHT)))
       }
+    } else {
     }
     _t = start
   }
@@ -145,16 +163,17 @@ var handle = raf(function tick() {
 
 const startFFMPEG = rtmpUrl => {
   const _videoBitrate = ` -preset ultrafast -tune zerolatency  -b:v ${BITRATE_V}k -minrate ${BITRATE_V /
-    2}k  -maxrate ${BITRATE_V}k  -bufsize ${BITRATE_V * 2}k -analyzeduration 2048 -probesize 128 `
+    2}k  -maxrate ${BITRATE_V}k  -bufsize ${BITRATE_V *
+    2}k -analyzeduration 2048 -probesize 128 `
 
   //-fflags nobuffer
-const _framerate = `-g ${Math.round(FPS * 2)} -r ${FPS} -framerate ${FPS} `
+  const _framerate = `-g ${Math.round(
+    FPS * 2
+  )} -r ${FPS} -framerate ${FPS} `
   const _options = OFFLINE
     ? `${TCP
         ? " -acodec aac -strict -2 -ar 48000 -ab 96k " //TCP
         : ""} ${_framerate} ${TCP ? "" : " "} `
-
-
     : ` -b:a ${BITRATE_A}k -c:v libx264 -pix_fmt yuv420p ${_framerate}`
 
   const _format = OFFLINE ? `${TCP ? "" : " -f mpegts"} ` : ` -f flv `
@@ -272,10 +291,16 @@ process.stdin.on("keypress", (str, key) => {
       break
 
     case "o":
-      GL_UNIFORMS.trailAmount = Math.min(GL_UNIFORMS.trailAmount + 0.05, 1)
+      GL_UNIFORMS.trailAmount = Math.min(
+        GL_UNIFORMS.trailAmount + 0.05,
+        1
+      )
       break
     case "l":
-      GL_UNIFORMS.trailAmount = Math.max(GL_UNIFORMS.trailAmount - 0.05, 0)
+      GL_UNIFORMS.trailAmount = Math.max(
+        GL_UNIFORMS.trailAmount - 0.05,
+        0
+      )
       break
 
     case "space":
@@ -310,7 +335,107 @@ process.stdin.on("keypress", (str, key) => {
   // ...
 })
 
-console.log(`PRESS <ESCAPE TO FINISH`);
+const input = fs.createReadStream("gd.mp4")
+input.on("data", function(chunk) {})
+var outStream = fs.createWriteStream("gd_tmp.mp4")
+outStream.on("data", function(chunk) {
+  //console.log("ffmpeg just wrote " + chunk.length + " bytes")
+})
+
+var Writable = require("stream").Writable,
+  util = require("util")
+
+var WriteStream = function() {
+  Writable.call(this, "binary")
+}
+util.inherits(WriteStream, Writable)
+
+const SIZE = 172800 * 4
+let _l = 0
+let _c = 0
+const _frameBuffers = []
+WriteStream.prototype._write = function(chunk, encoding, callback) {
+  _l += chunk.length
+  if (_l % SIZE === 0) {
+    const bufA = Buffer.concat(_frameBuffers, SIZE)
+    const img = tou8(bufA)
+    _c++
+    VIDEO_TEX({
+      format: "rgba",
+      width: 480,
+      height: 360,
+      type: "uint8",
+      mag: "nearest",
+      min: "nearest",
+      wrapS: "clamp",
+      wrapT: "clamp",
+      data: img,
+    })
+    _READY = true
+    _frameBuffers.length = 0
+  } else {
+    _frameBuffers.push(chunk)
+  }
+  /*console.log(img)
+  console.log(img.length)*/
+  //console.log(_l)
+  /*VIDEO_TEX({
+    format: "rgba",
+    width: 32,
+    type: "uint8",
+    mag: "nearest",
+    min: "nearest",
+    wrapS: "clamp",
+    wrapT: "clamp",
+    height: 64,
+    data: img,
+  })*/
+  // gl.drawSingle({
+  //   tex0: VIDEO_TEX,
+  // })
+  // process.exit()
+  // _READY = true
+  callback()
+}
+
+var ostream = new WriteStream()
+
+const command = fluentFF("gd.mp4")
+  //.inputOptions("-r 1")
+  //.inputFps(24)
+  .native()
+  //.videoCodec("libx264")
+  //.format("mp4")
+  .format("image2pipe")
+  .videoCodec("rawvideo")
+  //.audioCodec("copy")
+  //.format("rawvideo")
+  //.size(`${WIDTH}x${HEIGHT}`)
+  //.outputOptions("-y", "-pix_fmt", "rgba", "-an")
+  //.outputOptions("-y", "-frames:v","1", "-pix_fmt", "rgba", "-an")
+  .outputOptions("-y", "-pix_fmt", "rgba", "-an")
+  //.outputOptions("-vf", "fps=24/1")
+  .on("start", function(err) {
+    console.log(err)
+  })
+  .on("error", function(err) {
+    console.log("An error occurred: " + err.message)
+  })
+  .on("data", function(err) {
+    console.log(err)
+  })
+  .on("end", function() {
+    console.log("Processing finished !")
+  })
+  .pipe(ostream, { end: true })
+//.output("img%03d.jpg")
+//.run()
+// var ffstream = command.pipe()
+// ffstream.on("data", function(chunk) {
+//   console.log("ffmpeg just wrote " + chunk.length + " bytes")
+// })
+
+console.log(`PRESS <ESCAPE TO FINISH`)
 
 //initWebgl()
 
