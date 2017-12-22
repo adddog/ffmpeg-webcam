@@ -31,7 +31,7 @@ const TCP_STREAM_NAME = "/webcam"
 
 var now = require("performance-now")
 const WebcamWebsocket = require("./index")
-const WEBCAM_IPS = ["10.0.1.9"] //, "10.0.1.3"//"10.0.1.9", "10.0.1.7"
+const WEBCAM_IPS = ["10.0.1.9", "10.0.1.7"] //, "10.0.1.3"//"10.0.1.9", "10.0.1.7"
 const WEBCAM_IP = "10.0.1.7"
 const WEBCAM_IP_2 = "10.0.1.9"
 const STREAM_IP = "10.0.1.8"
@@ -69,16 +69,20 @@ const GL_UNIFORMS = {
   trailIndex: 0,
   trailAmount: 0.3,
   keyIndex: 1,
-  keyColor: [0, 0, 0],
+  keyColor: [0.5, 0.5, 0.5],
   uSaturations: [1, 1, 1, 1],
 
   overlayKeyColor: [1, 1, 1],
   overlayKeySlope: 0.1,
   overlayKeyTolerance: 0.5,
+  overlayContrast: 1.,
+  overlaySaturation: 1.,
+  overlayTone: [0., 0.1],
 
+  pulseAmount: 0.08,
   selectionIndex: 0,
 }
-const keyboard = KEYBOARD(GL_UNIFORMS)
+const keyboard = KEYBOARD(GL_UNIFORMS, WEBCAM_IPS)
 
 const gl = GL({
   width: WIDTH,
@@ -131,8 +135,16 @@ var handle = raf(function tick() {
           tex0: connections[0].player.pixels,
           tex1: connections[1].player.pixels,
           feedback: feedback,
+          overlay: VIDEO_TEX,
           keySlope: GL_UNIFORMS.keySlope,
           keyTolerance: GL_UNIFORMS.keyTolerance,
+          overlayKeySlope: GL_UNIFORMS.overlayKeySlope,
+          overlayKeyTolerance: GL_UNIFORMS.overlayKeyTolerance,
+          overlayKeyColor: GL_UNIFORMS.overlayKeyColor,
+          overlayContrast: GL_UNIFORMS.overlayContrast,
+          overlaySaturation: GL_UNIFORMS.overlaySaturation,
+          overlayTone: GL_UNIFORMS.overlayTone,
+          pulseAmount: GL_UNIFORMS.pulseAmount,
           trailAmount: GL_UNIFORMS.trailAmount,
           keyIndex: GL_UNIFORMS.keyIndex,
           trailIndex: GL_UNIFORMS.trailIndex,
