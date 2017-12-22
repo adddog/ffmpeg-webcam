@@ -65,16 +65,16 @@ function startStream(options) {
 
 const GL_UNIFORMS = {
   keySlope: 0.1,
-  keyTolerance: 0.5,
+  keyTolerance: 0.8,
   trailIndex: 0,
   trailAmount: 0.3,
   keyIndex: 1,
-  keyColor: [0.5, 0.5, 0.5],
+  keyColor: [0.8, 0.8, 0.8],
   uSaturations: [1, 1, 1, 1],
 
   overlayKeyColor: [1, 1, 1],
   overlayKeySlope: 0.1,
-  overlayKeyTolerance: 0.5,
+  overlayKeyTolerance: 0.8,
   overlayContrast: 1.,
   overlaySaturation: 1.,
   overlaySelectionIndex: 1,
