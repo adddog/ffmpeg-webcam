@@ -15,7 +15,7 @@ const HEIGHT = 480*/
 const WIDTH = 352
 const HEIGHT = 288
 //!!!!!!!!
-const OFFLINE = true
+const OFFLINE = false
 //!!!!!!!!
 const FB_PRIVACY = "private"
 //SAM
@@ -30,7 +30,7 @@ const TCP_STREAM_NAME = "/webcam"
 
 var now = require("performance-now")
 const WebcamWebsocket = require("./index")
-const WEBCAM_IPS = ["10.0.1.9"] //, "10.0.1.3"
+const WEBCAM_IPS = ["10.0.1.9","10.0.1.7"] //, "10.0.1.3"
 const WEBCAM_IP = "10.0.1.7"
 const WEBCAM_IP_2 = "10.0.1.9"
 const STREAM_IP = "10.0.1.8"
@@ -63,10 +63,10 @@ function startStream(options) {
 })*/
 
 const GL_UNIFORMS = {
-  slope: 0.1,
-  tolerance: 0.5,
+  keySlope: 0.1,
+  keyAmount: 0.5,
   trailIndex: 0,
-  trailAmount: .9,
+  trailAmount: .3,
   keyIndex: 1,
   keyColor: [0, 0, 0],
   uSaturations: [1, 1, 1, 1],
@@ -118,8 +118,8 @@ var handle = raf(function tick() {
           tex0: connections[0].player.pixels,
           tex1: connections[1].player.pixels,
           feedback: feedback,
-          slope: GL_UNIFORMS.slope,
-          tolerance: GL_UNIFORMS.tolerance,
+          keySlope: GL_UNIFORMS.keySlope,
+          keyAmount: GL_UNIFORMS.keyAmount,
           trailAmount: GL_UNIFORMS.trailAmount,
           keyIndex: GL_UNIFORMS.keyIndex,
           trailIndex:GL_UNIFORMS.trailIndex,
@@ -145,7 +145,7 @@ var handle = raf(function tick() {
 
 const startFFMPEG = rtmpUrl => {
   const _videoBitrate = ` -preset ultrafast -tune zerolatency  -b:v ${BITRATE_V}k -minrate ${BITRATE_V /
-    2}k  -maxrate ${BITRATE_V}k  -bufsize ${BITRATE_V * 2}k -analyzeduration 1000000 -probesize 4096 `
+    2}k  -maxrate ${BITRATE_V}k  -bufsize ${BITRATE_V * 2}k -analyzeduration 2048 -probesize 128 `
 
   //-fflags nobuffer
 const _framerate = `-g ${Math.round(FPS * 2)} -r ${FPS} -framerate ${FPS} `
@@ -160,7 +160,7 @@ const _framerate = `-g ${Math.round(FPS * 2)} -r ${FPS} -framerate ${FPS} `
   const _format = OFFLINE ? `${TCP ? "" : " -f mpegts"} ` : ` -f flv `
 
   const _audioInput = OFFLINE
-    ? ["-f", "lavfi", "-i", "anullsrc", "-framerate", FPS]
+    ? ["-y", "-f", "avfoundation", "-i", ":3", "-framerate", FPS]
     : ["-y", "-f", "avfoundation", "-i", ":3", "-framerate", FPS]
   startStream(
     Object.assign(
@@ -222,22 +222,22 @@ process.stdin.on("keypress", (str, key) => {
   console.log(key.name)
   switch (key.name) {
     case "q":
-      GL_UNIFORMS.tolerance = Math.min(
-        GL_UNIFORMS.tolerance + 0.05,
+      GL_UNIFORMS.keyAmount = Math.min(
+        GL_UNIFORMS.keyAmount + 0.05,
         1
       )
       break
     case "a":
-      GL_UNIFORMS.tolerance = Math.max(
-        GL_UNIFORMS.tolerance - 0.05,
+      GL_UNIFORMS.keyAmount = Math.max(
+        GL_UNIFORMS.keyAmount - 0.05,
         0
       )
       break
     case "w":
-      GL_UNIFORMS.slope = Math.min(GL_UNIFORMS.slope + 0.05, 1)
+      GL_UNIFORMS.keySlope = Math.min(GL_UNIFORMS.keySlope + 0.05, 1)
       break
     case "s":
-      GL_UNIFORMS.slope = Math.max(GL_UNIFORMS.slope - 0.05, 0)
+      GL_UNIFORMS.keySlope = Math.max(GL_UNIFORMS.keySlope - 0.05, 0)
       break
 
     case "t":
@@ -283,17 +283,17 @@ process.stdin.on("keypress", (str, key) => {
         (GL_UNIFORMS.selectionIndex + 1) % WEBCAM_IPS.length
       break
     case "escape":
+      FFMPEG.end()
       FB.endLiveVideo({
         postId: FB.postId,
         accessToken: FB_ACCESS_TOKEN,
       })
-      FFMPEG.end()
       break
   }
 
   console.log("----Keys ----")
-  console.log(`q - (a) is tolerance`)
-  console.log(`w - (s) is slope`)
+  console.log(`q - (a) is keyAmount`)
+  console.log(`w - (s) is keySlope`)
   console.log(`t - (g) is color`)
   console.log(`i is invert`)
   console.log("\n")
@@ -310,10 +310,7 @@ process.stdin.on("keypress", (str, key) => {
   // ...
 })
 
-const extra = fluentFF("gd.mp4").native()
-extra.on("data", function(chunk) {
-  console.log("ffmpeg just wrote " + chunk.length + " bytes")
-})
+console.log(`PRESS <ESCAPE TO FINISH`);
 
 //initWebgl()
 

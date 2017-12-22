@@ -10,6 +10,8 @@ https://cycling74.com/forums/broken-tutorial-53-jitter-networking-part-2-how-do-
 https://lists.ffmpeg.org/pipermail/ffmpeg-user/2016-February/030853.html
 ffplay  -protocol_whitelist file,udp,rtp -i spd_file.spd
 
+ffmpeg -f avfoundation -list_devices true -i ""
+
 
 MAX will play ideas.
 
@@ -33,3 +35,12 @@ Video background keyed out around people
 ```
 
 python -m http.server 1111
+
+AUDIO
+https://fb360spatialworkstation.zendesk.com/hc/en-us/articles/115002372309-Using-an-ambisonic-microphone-with-your-Live-360-video-on-Facebook
+
+https://stackoverflow.com/questions/25489628/streams-mixed-when-using-filter-complex-amerge-in-ffmpeg
+
+Do not use above -a:b 128k
+
+Route all channels from scarlette to SoundFlower 2ch
