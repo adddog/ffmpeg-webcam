@@ -77,6 +77,7 @@ const GL_UNIFORMS = {
   overlayKeyTolerance: 0.5,
   overlayContrast: 1.,
   overlaySaturation: 1.,
+  overlaySelectionIndex: 1,
   overlayTone: [0., 0.1],
 
   pulseAmount: 0.08,
@@ -143,6 +144,7 @@ var handle = raf(function tick() {
           overlayKeyColor: GL_UNIFORMS.overlayKeyColor,
           overlayContrast: GL_UNIFORMS.overlayContrast,
           overlaySaturation: GL_UNIFORMS.overlaySaturation,
+          overlaySelectionIndex: GL_UNIFORMS.overlaySelectionIndex,
           overlayTone: GL_UNIFORMS.overlayTone,
           pulseAmount: GL_UNIFORMS.pulseAmount,
           trailAmount: GL_UNIFORMS.trailAmount,
