@@ -12,3 +12,5 @@ server/static
 build
 *.mkv
 *.mp4
+*.MOV
+*.zip

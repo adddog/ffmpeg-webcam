@@ -1,16 +1,13 @@
-const readline = require("readline")
 var toArrayBuffer = require("to-array-buffer")
 var tou8 = require("buffer-to-uint8array")
-
-readline.emitKeypressEvents(process.stdin)
-process.stdin.setRawMode(true)
 const fs = require("fs")
 const raf = require("raf")
 var toBuffer = require("typedarray-to-buffer")
-const fluentFF = require("fluent-ffmpeg")
 const ffmpeg = require("./lib/ffmpeg")
 const FB = require("./lib/fb")
 const GL = require("./lib/gl")
+const KEYBOARD = require("./lib/keyboard")
+const VIDEO_OVERLAYS = require("./lib/video_overlays")
 const BITRATE_A = 140
 const BITRATE_V = 400
 const FPS = 30
@@ -68,15 +65,20 @@ function startStream(options) {
 
 const GL_UNIFORMS = {
   keySlope: 0.1,
-  keyAmount: 0.5,
+  keyTolerance: 0.5,
   trailIndex: 0,
   trailAmount: 0.3,
   keyIndex: 1,
   keyColor: [0, 0, 0],
   uSaturations: [1, 1, 1, 1],
 
+  overlayKeyColor: [1, 1, 1],
+  overlayKeySlope: 0.1,
+  overlayKeyTolerance: 0.5,
+
   selectionIndex: 0,
 }
+const keyboard = KEYBOARD(GL_UNIFORMS)
 
 const gl = GL({
   width: WIDTH,
@@ -92,17 +94,11 @@ const connections = WEBCAM_IPS.map(ip =>
   })
 )
 
-const VIDEO_TEX = gl.regl.texture({
-  format: "rgba",
-  width: HEIGHT,
-  type: "uint8",
-  mag: "nearest",
-  min: "nearest",
-  wrapS: "clamp",
-  wrapT: "clamp",
-  height: HEIGHT,
+const VIDEO_TEX = gl.regl.texture()
+
+const videoOverlays = VIDEO_OVERLAYS(VIDEO_TEX, {
+  dir: "_videos",
 })
-let _READY = false
 
 var _t = now().toFixed(3)
 var handle = raf(function tick() {
@@ -112,7 +108,7 @@ var handle = raf(function tick() {
     //&& ff2.player.outBuffer
 
     if (WEBCAM_IPS.length == 1) {
-      if (connections[0].player.outBuffer && _READY) {
+      if (connections[0].player.outBuffer) {
         gl.drawSingle({
           tex0: connections[0].player.pixels,
           overlay: VIDEO_TEX,
@@ -136,7 +132,7 @@ var handle = raf(function tick() {
           tex1: connections[1].player.pixels,
           feedback: feedback,
           keySlope: GL_UNIFORMS.keySlope,
-          keyAmount: GL_UNIFORMS.keyAmount,
+          keyTolerance: GL_UNIFORMS.keyTolerance,
           trailAmount: GL_UNIFORMS.trailAmount,
           keyIndex: GL_UNIFORMS.keyIndex,
           trailIndex: GL_UNIFORMS.trailIndex,
@@ -236,204 +232,6 @@ function start() {
 }
 
 start()
-// Start the keypress listener for the process
-process.stdin.on("keypress", (str, key) => {
-  console.log(key.name)
-  switch (key.name) {
-    case "q":
-      GL_UNIFORMS.keyAmount = Math.min(
-        GL_UNIFORMS.keyAmount + 0.05,
-        1
-      )
-      break
-    case "a":
-      GL_UNIFORMS.keyAmount = Math.max(
-        GL_UNIFORMS.keyAmount - 0.05,
-        0
-      )
-      break
-    case "w":
-      GL_UNIFORMS.keySlope = Math.min(GL_UNIFORMS.keySlope + 0.05, 1)
-      break
-    case "s":
-      GL_UNIFORMS.keySlope = Math.max(GL_UNIFORMS.keySlope - 0.05, 0)
-      break
-
-    case "t":
-      GL_UNIFORMS.keyColor = GL_UNIFORMS.keyColor.map(c =>
-        Math.min(c + 0.05, 1)
-      )
-      break
-    case "g":
-      GL_UNIFORMS.keyColor = GL_UNIFORMS.keyColor.map(c =>
-        Math.max(c - 0.05, 0)
-      )
-      break
-
-    case "y":
-      GL_UNIFORMS.uSaturations[GL_UNIFORMS.selectionIndex] = Math.min(
-        GL_UNIFORMS.uSaturations[GL_UNIFORMS.selectionIndex] + 0.05,
-        4
-      )
-      break
-    case "h":
-      GL_UNIFORMS.uSaturations[GL_UNIFORMS.selectionIndex] = Math.max(
-        GL_UNIFORMS.uSaturations[GL_UNIFORMS.selectionIndex] - 0.05,
-        0
-      )
-      break
-
-    case "i":
-      GL_UNIFORMS.keyIndex = GL_UNIFORMS.keyIndex === 0 ? 1 : 0
-      break
-    case "k":
-      GL_UNIFORMS.trailIndex = GL_UNIFORMS.trailIndex === 0 ? 1 : 0
-      break
-
-    case "o":
-      GL_UNIFORMS.trailAmount = Math.min(
-        GL_UNIFORMS.trailAmount + 0.05,
-        1
-      )
-      break
-    case "l":
-      GL_UNIFORMS.trailAmount = Math.max(
-        GL_UNIFORMS.trailAmount - 0.05,
-        0
-      )
-      break
-
-    case "space":
-      GL_UNIFORMS.selectionIndex =
-        (GL_UNIFORMS.selectionIndex + 1) % WEBCAM_IPS.length
-      break
-    case "escape":
-      FFMPEG.end()
-      FB.endLiveVideo({
-        postId: FB.postId,
-        accessToken: FB_ACCESS_TOKEN,
-      })
-      break
-  }
-
-  console.log("----Keys ----")
-  console.log(`q - (a) is keyAmount`)
-  console.log(`w - (s) is keySlope`)
-  console.log(`t - (g) is color`)
-  console.log(`i is invert`)
-  console.log("\n")
-  console.log("GL_UNIFORMS-----")
-  console.log(GL_UNIFORMS)
-  console.log("\n")
-
-  // "Raw" mode so we must do our own kill switch
-  if (key.sequence === "\u0003") {
-    process.exit()
-  }
-
-  // User has triggered a keypress, now do whatever we want!
-  // ...
-})
-
-const input = fs.createReadStream("gd.mp4")
-input.on("data", function(chunk) {})
-var outStream = fs.createWriteStream("gd_tmp.mp4")
-outStream.on("data", function(chunk) {
-  //console.log("ffmpeg just wrote " + chunk.length + " bytes")
-})
-
-var Writable = require("stream").Writable,
-  util = require("util")
-
-var WriteStream = function() {
-  Writable.call(this, "binary")
-}
-util.inherits(WriteStream, Writable)
-
-const SIZE = 172800 * 4
-let _l = 0
-let _c = 0
-const _frameBuffers = []
-WriteStream.prototype._write = function(chunk, encoding, callback) {
-  _l += chunk.length
-  if (_l % SIZE === 0) {
-    const bufA = Buffer.concat(_frameBuffers, SIZE)
-    const img = tou8(bufA)
-    _c++
-    VIDEO_TEX({
-      format: "rgba",
-      width: 480,
-      height: 360,
-      type: "uint8",
-      mag: "nearest",
-      min: "nearest",
-      wrapS: "clamp",
-      wrapT: "clamp",
-      data: img,
-    })
-    _READY = true
-    _frameBuffers.length = 0
-  } else {
-    _frameBuffers.push(chunk)
-  }
-  /*console.log(img)
-  console.log(img.length)*/
-  //console.log(_l)
-  /*VIDEO_TEX({
-    format: "rgba",
-    width: 32,
-    type: "uint8",
-    mag: "nearest",
-    min: "nearest",
-    wrapS: "clamp",
-    wrapT: "clamp",
-    height: 64,
-    data: img,
-  })*/
-  // gl.drawSingle({
-  //   tex0: VIDEO_TEX,
-  // })
-  // process.exit()
-  // _READY = true
-  callback()
-}
-
-var ostream = new WriteStream()
-
-const command = fluentFF("gd.mp4")
-  //.inputOptions("-r 1")
-  //.inputFps(24)
-  .native()
-  //.videoCodec("libx264")
-  //.format("mp4")
-  .format("image2pipe")
-  .videoCodec("rawvideo")
-  //.audioCodec("copy")
-  //.format("rawvideo")
-  //.size(`${WIDTH}x${HEIGHT}`)
-  //.outputOptions("-y", "-pix_fmt", "rgba", "-an")
-  //.outputOptions("-y", "-frames:v","1", "-pix_fmt", "rgba", "-an")
-  .outputOptions("-y", "-pix_fmt", "rgba", "-an")
-  //.outputOptions("-vf", "fps=24/1")
-  .on("start", function(err) {
-    console.log(err)
-  })
-  .on("error", function(err) {
-    console.log("An error occurred: " + err.message)
-  })
-  .on("data", function(err) {
-    console.log(err)
-  })
-  .on("end", function() {
-    console.log("Processing finished !")
-  })
-  .pipe(ostream, { end: true })
-//.output("img%03d.jpg")
-//.run()
-// var ffstream = command.pipe()
-// ffstream.on("data", function(chunk) {
-//   console.log("ffmpeg just wrote " + chunk.length + " bytes")
-// })
 
 console.log(`PRESS <ESCAPE TO FINISH`)
 
