@@ -51,10 +51,6 @@ function startStream(options) {
     h: options.h,
     output: options.output,
     options: [`${options.options || ""} `],
-
-    /*
-
-    */
   })
 }
 
@@ -75,15 +71,14 @@ const GL_UNIFORMS = {
   overlayKeyColor: [1, 1, 1],
   overlayKeySlope: 0.1,
   overlayKeyTolerance: 0.8,
-  overlayContrast: 1.,
-  overlaySaturation: 1.,
+  overlayContrast: 1,
+  overlaySaturation: 1,
   overlaySelectionIndex: 1,
-  overlayTone: [0., 0.1],
+  overlayTone: [0, 0.1],
 
   pulseAmount: 0.08,
   selectionIndex: 0,
 }
-const keyboard = KEYBOARD(GL_UNIFORMS, WEBCAM_IPS)
 
 const gl = GL({
   width: WIDTH,
@@ -213,6 +208,14 @@ const startFFMPEG = rtmpUrl => {
       { w: WIDTH, h: HEIGHT }
     )
   )
+
+  const keyboard = KEYBOARD({
+    GL_UNIFORMS,
+    FB,
+    FB_ACCESS_TOKEN,
+    FFMPEG,
+    WEBCAM_IPS,
+  })
 }
 
 function start() {
@@ -246,6 +249,16 @@ function start() {
 }
 
 start()
+
+setTimeout(() => {
+  FFMPEG.end()
+  FB.endLiveVideo({
+    postId: FB.postId,
+    accessToken: FB_ACCESS_TOKEN,
+  })
+  console.log("ENDED!")
+  process.exit()
+}, 15 * 60 * 1000)
 
 console.log(`PRESS <ESCAPE TO FINISH`)
 

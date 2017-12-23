@@ -47,3 +47,7 @@ Route all channels from scarlette to SoundFlower 2ch
 
 for i in *.MOV; do ffmpeg -i $i -c:v libx264 -an -framerate 30 -r 30 -y -b:v 2000k -vf scale=-1:352 $i.mp4; done
 
+for i in *.mp4; do ffmpeg -i $i -c:v libx264 -an -framerate 30 -r 30 -y -b:v 2000k -vf scale=-1:352 $i.mp4; done
+
+for i in *.3gp; do ffmpeg -i $i -c:v libx264 -an -framerate 30 -r 30 -y -b:v 2000k  $i.mp4; done
+
