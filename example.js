@@ -8,15 +8,16 @@ const FB = require("./lib/fb")
 const GL = require("./lib/gl")
 const KEYBOARD = require("./lib/keyboard")
 const VIDEO_OVERLAYS = require("./lib/video_overlays")
-const BITRATE_A = 140
+const BITRATE_A = 128
 const BITRATE_V = 400
 const FPS = 30
 /*const WIDTH = 640
 const HEIGHT = 480*/
 const WIDTH = 352
 const HEIGHT = 288
+const VIDEO_DIR = "VELVET_VIDEOS"
 //!!!!!!!!
-const OFFLINE = true
+const OFFLINE = false
 //!!!!!!!!
 const FB_PRIVACY = "private"
 //SAM
@@ -97,7 +98,7 @@ const connections = WEBCAM_IPS.map(ip =>
 const VIDEO_TEX = gl.regl.texture()
 
 const videoOverlays = VIDEO_OVERLAYS(VIDEO_TEX, {
-  dir: "_videos",
+  dir: `_videos/${VIDEO_DIR}`,
 })
 
 var _t = now().toFixed(3)
@@ -169,7 +170,7 @@ var handle = raf(function tick() {
 const startFFMPEG = rtmpUrl => {
   const _videoBitrate = ` -preset ultrafast -tune zerolatency  -b:v ${BITRATE_V}k -minrate ${BITRATE_V /
     2}k  -maxrate ${BITRATE_V}k  -bufsize ${BITRATE_V *
-    2}k -analyzeduration 2048 -probesize 128 `
+    2}k -analyzeduration 8600 -probesize 512 `
 
   //-fflags nobuffer
   const _framerate = `-g ${Math.round(
