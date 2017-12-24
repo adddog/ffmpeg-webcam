@@ -45,9 +45,9 @@ Do not use above -a:b 128k
 
 Route all channels from scarlette to SoundFlower 2ch
 
-for i in *.MOV; do ffmpeg -i $i -c:v libx264 -an -framerate 30 -r 30 -y -b:v 2000k -vf scale=-1:352 $i.mp4; done
-
-for i in *.mp4; do ffmpeg -i $i -c:v libx264 -an -framerate 30 -r 30 -y -b:v 2000k -vf scale=-1:352 $i.mp4; done
+//720p
+for i in *.mp4; do ffmpeg -i $i -c:v libx264 -an -vf scale=-1:288,crop=352:288:0:80,setsar=1 -f mp4 $i.mp4; done
 
 for i in *.3gp; do ffmpeg -i $i -c:v libx264 -an -framerate 30 -r 30 -y -b:v 2000k  $i.mp4; done
+./split-join.sh -x mp4 -q 20 -w 40 -e out
 

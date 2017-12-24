@@ -15,7 +15,7 @@ const FPS = 30
 const HEIGHT = 480*/
 const WIDTH = 352
 const HEIGHT = 288
-const VIDEO_DIR = "VELVET_VIDEOS"
+const VIDEO_DIR = "_used"
 //!!!!!!!!
 const OFFLINE = false
 //!!!!!!!!
@@ -60,26 +60,7 @@ function startStream(options) {
   port: "1337",
 })*/
 
-const GL_UNIFORMS = {
-  keySlope: 0.1,
-  keyTolerance: 0.8,
-  trailIndex: 0,
-  trailAmount: 0.3,
-  keyIndex: 1,
-  keyColor: [0.8, 0.8, 0.8],
-  uSaturations: [1, 1, 1, 1],
-
-  overlayKeyColor: [1, 1, 1],
-  overlayKeySlope: 0.1,
-  overlayKeyTolerance: 0.8,
-  overlayContrast: 1,
-  overlaySaturation: 1,
-  overlaySelectionIndex: 1,
-  overlayTone: [0, 0.1],
-
-  pulseAmount: 0.08,
-  selectionIndex: 0,
-}
+const GL_UNIFORMS = JSON.parse(fs.readFileSync("settings.json", "utf-8"))
 
 const gl = GL({
   width: WIDTH,
@@ -170,7 +151,7 @@ var handle = raf(function tick() {
 const startFFMPEG = rtmpUrl => {
   const _videoBitrate = ` -preset ultrafast -tune zerolatency  -b:v ${BITRATE_V}k -minrate ${BITRATE_V /
     2}k  -maxrate ${BITRATE_V}k  -bufsize ${BITRATE_V *
-    2}k -analyzeduration 8600 -probesize 512 `
+    2}k -analyzeduration 4096 -probesize 512 `
 
   //-fflags nobuffer
   const _framerate = `-g ${Math.round(
