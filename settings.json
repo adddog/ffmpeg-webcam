@@ -1,0 +1,47 @@
+{
+    "keySlope": 0.15000000000000377,
+    "keyTolerance": 0.9000000000000108,
+    "trailIndex": 0,
+    "trailAmount": 0.3,
+    "keyIndex": 1,
+    "keyColor": [
+        0.9950000000000221,
+        0.9950000000000221,
+        0.9950000000000221
+    ],
+    "uSaturations": [
+        3.074999999999954,
+        2.224999999999967,
+        1,
+        1
+    ],
+    "uBrightnesses": [
+        0.10000000000000289,
+        0.11000000000000255,
+        0,
+        0
+    ],
+    "uContrasts": [
+        0.26499999999998836,
+        0.22999999999998266,
+        0,
+        0
+    ],
+    "overlayKeyColor": [
+        0.9950000000000236,
+        0.9950000000000236,
+        0.9950000000000236
+    ],
+    "overlayKeySlope": 0.3750000000000072,
+    "overlayKeyTolerance": 0.6000000000000245,
+    "overlayContrast": 1.4499999999999929,
+    "overlaySaturation": 0.7249999999999803,
+    "overlayColorMix": 0.3100000000000041,
+    "overlaySelectionIndex": 0,
+    "overlayTone": [
+        0.01000000000000866,
+        0.18000000000000735
+    ],
+    "pulseAmount": 0.04,
+    "selectionIndex": 0
+}

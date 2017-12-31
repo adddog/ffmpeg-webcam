@@ -1,5 +1,6 @@
 var toArrayBuffer = require("to-array-buffer")
 var tou8 = require("buffer-to-uint8array")
+var randomWord = require("random-word")
 const fs = require("fs")
 const raf = require("raf")
 var toBuffer = require("typedarray-to-buffer")
@@ -15,24 +16,23 @@ const FPS = 30
 const HEIGHT = 480*/
 const WIDTH = 352
 const HEIGHT = 288
+const AUDIO_INPUT_CHANNEL = ":3"
 const VIDEO_DIR = "_used"
 //!!!!!!!!
 const OFFLINE = false
+const IS_PRIVATE = true
 //!!!!!!!!
-const FB_PRIVACY = "private"
+const FB_PRIVACY = IS_PRIVATE ? "private" : "public"
 //SAM
 const FB_ACCESS_TOKEN =
-  "EAAXiyxq1MwkBAOg8Qi5h17SIPtgkG0dfiFxn0u5kjTqC2YVNtZC9Cnd8lVWsmIZB3P4xmccCPpZB9XhKe1MC7yOTXmhL96xkgkB4GAZBiwiQkR4FNbVkKbZBydJ2zdSYVUFOQhsy6FtNh66HYTKz1ys74Oa4vPSEZD"
-//DAD
-// const FB_ACCESS_TOKEN =
-//   "EAAXiyxq1MwkBAChJIEEIgdKLVCEwMNJv068D4Cfmy0zcoE3ZCml9wJ7RZBkttxPMyMD3IAjiEgOPbo4cbPWxhHAMfguKSA2Ad3jShq17EchLxaMnuZCXBLeAJ32XxgXfPbBtSxhzIxqQjRy5B9ZBqIsXjEd6fL8ZD"
+  "EAAXiyxq1MwkBAHI8Ydcaa0kDVDLnJlkmY751RVd3thLpwtoKqhKWhavwvPHoUyMh6YvQgR9Q8hxciR07BnrhAOGWHODghvEIkM3qO8N9gqXUq1mGMLWk58hRZBGHJ5fv6RmppKRVszXEktgeUCTzwi8O0hTsUXXkrYSqq0AZDZD"
 
 const TCP = false
 const TCP_STREAM_NAME = "/webcam"
 
 var now = require("performance-now")
 const WebcamWebsocket = require("./index")
-const WEBCAM_IPS = ["10.0.1.9", "10.0.1.7"] //, "10.0.1.3"//"10.0.1.9", "10.0.1.7"
+const WEBCAM_IPS = ["10.0.1.3", "10.0.1.9"] //, "10.0.1.3"//, "10.0.1.7"
 const WEBCAM_IP = "10.0.1.7"
 const WEBCAM_IP_2 = "10.0.1.9"
 const STREAM_IP = "10.0.1.8"
@@ -60,7 +60,9 @@ function startStream(options) {
   port: "1337",
 })*/
 
-const GL_UNIFORMS = JSON.parse(fs.readFileSync("settings.json", "utf-8"))
+const GL_UNIFORMS = JSON.parse(
+  fs.readFileSync("settings.json", "utf-8")
+)
 
 const gl = GL({
   width: WIDTH,
@@ -121,6 +123,7 @@ var handle = raf(function tick() {
           overlayKeyColor: GL_UNIFORMS.overlayKeyColor,
           overlayContrast: GL_UNIFORMS.overlayContrast,
           overlaySaturation: GL_UNIFORMS.overlaySaturation,
+          overlayColorMix: GL_UNIFORMS.overlayColorMix,
           overlaySelectionIndex: GL_UNIFORMS.overlaySelectionIndex,
           overlayTone: GL_UNIFORMS.overlayTone,
           pulseAmount: GL_UNIFORMS.pulseAmount,
@@ -129,6 +132,8 @@ var handle = raf(function tick() {
           trailIndex: GL_UNIFORMS.trailIndex,
           keyColor: GL_UNIFORMS.keyColor,
           uSaturations: GL_UNIFORMS.uSaturations,
+          uBrightnesses: GL_UNIFORMS.uBrightnesses,
+          uContrasts: GL_UNIFORMS.uContrasts,
         })
         feedback({
           copy: true,
@@ -166,8 +171,24 @@ const startFFMPEG = rtmpUrl => {
   const _format = OFFLINE ? `${TCP ? "" : " -f mpegts"} ` : ` -f flv `
 
   const _audioInput = OFFLINE
-    ? ["-y", "-f", "avfoundation", "-i", ":3", "-framerate", FPS]
-    : ["-y", "-f", "avfoundation", "-i", ":3", "-framerate", FPS]
+    ? [
+        "-y",
+        "-f",
+        "avfoundation",
+        "-i",
+        AUDIO_INPUT_CHANNEL,
+        "-framerate",
+        FPS,
+      ]
+    : [
+        "-y",
+        "-f",
+        "avfoundation",
+        "-i",
+        AUDIO_INPUT_CHANNEL,
+        "-framerate",
+        FPS,
+      ]
   startStream(
     Object.assign(
       {},
@@ -208,11 +229,15 @@ function start() {
       public: "{'value':'EVERYONE'}",
       friends: "{'value':'ALL_FRIENDS'}",
       friends_of_friends: "{'value':'FRIENDS_OF_FRIENDS'}",
+      custom: "{'value':'CUSTOM', 'allow':'3205817'}",
       private: null,
     }
+    console.log("------")
+    console.log(privacys[FB_PRIVACY])
+    console.log("------")
     FB.startLiveVideo({
       accessToken: FB_ACCESS_TOKEN,
-      title: "Live Video",
+      title: randomWord(),
       privacy: privacys[FB_PRIVACY],
       /*privacy:
         privacys["public"] ||
@@ -228,21 +253,29 @@ function start() {
         console.error(error.message, error.options)
       })
   }
+  setTimeout(() => {
+    if (FB.postId) {
+      FB.endLiveVideo({
+        postId: FB.postId,
+        accessToken: FB_ACCESS_TOKEN,
+      }).then(r => {
+        process.exit()
+      })
+    } else {
+      process.exit()
+    }
+  }, 15 * 60 * 1000)
 }
 
-start()
+if (OFFLINE) {
+  start()
+} else {
+  setTimeout(() => {
+  }, 15000)
+    start()
+}
 
-setTimeout(() => {
-  FFMPEG.end()
-  FB.endLiveVideo({
-    postId: FB.postId,
-    accessToken: FB_ACCESS_TOKEN,
-  })
-  console.log("ENDED!")
-  process.exit()
-}, 15 * 60 * 1000)
-
-console.log(`PRESS <ESCAPE TO FINISH`)
+console.log(`PRESS <ESCAPE> TO FINISH`)
 
 //initWebgl()
 
