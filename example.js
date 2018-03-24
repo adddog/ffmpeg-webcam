@@ -5,6 +5,8 @@ const fs = require("fs")
 const raf = require("raf")
 var toBuffer = require("typedarray-to-buffer")
 const ffmpeg = require("./lib/ffmpeg")
+const WebcamWebsocket = require('./lib/webcam-websocket-regl')
+const WebcamWebsocketLegacy = require('./lib/webcam-websocket-legacy-regl')
 const FB = require("./lib/fb")
 const GL = require("./lib/gl")
 const KEYBOARD = require("./lib/keyboard")
@@ -19,7 +21,7 @@ const HEIGHT = 288
 const AUDIO_INPUT_CHANNEL = ":3"
 const VIDEO_DIR = "_used"
 //!!!!!!!!
-const OFFLINE = false
+const OFFLINE = true
 const IS_PRIVATE = true
 //!!!!!!!!
 const FB_PRIVACY = IS_PRIVATE ? "private" : "public"
@@ -31,13 +33,11 @@ const TCP = false
 const TCP_STREAM_NAME = "/webcam"
 
 var now = require("performance-now")
-const WebcamWebsocket = require("./index")
-const WEBCAM_IPS = ["10.0.1.3", "10.0.1.9"] //, "10.0.1.3"//, "10.0.1.7"
-const WEBCAM_IP = "10.0.1.7"
-const WEBCAM_IP_2 = "10.0.1.9"
-const STREAM_IP = "10.0.1.8"
+
+const WEBCAM_IPS = ["192.168.1.76"] //, "10.0.1.3"//, "10.0.1.7"
+const STREAM_IP = "192.168.1.134"
 const STREAM_PORT = "1337"
-const web = WebcamWebsocket()
+const web = WebcamWebsocketLegacy()
 
 let FFMPEG
 function startStream(options) {
@@ -60,9 +60,10 @@ function startStream(options) {
   port: "1337",
 })*/
 
-const GL_UNIFORMS = JSON.parse(
-  fs.readFileSync("settings.json", "utf-8")
-)
+const GL_UNIFORMS = {
+  ...JSON.parse(fs.readFileSync("settings_backup.json", "utf-8")),
+  ...JSON.parse(fs.readFileSync("settings.json", "utf-8")),
+}
 
 const gl = GL({
   width: WIDTH,
@@ -74,7 +75,7 @@ const feedback = gl.regl.texture()
 const connections = WEBCAM_IPS.map(ip =>
   web.connect(gl, ip, {
     ip: STREAM_IP,
-    port: "1337",
+    port: STREAM_PORT,
   })
 )
 
@@ -163,9 +164,11 @@ const startFFMPEG = rtmpUrl => {
     FPS * 2
   )} -r ${FPS} -framerate ${FPS} `
   const _options = OFFLINE
-    ? `${TCP
-        ? " -acodec aac -strict -2 -ar 48000 -ab 96k " //TCP
-        : ""} ${_framerate} ${TCP ? "" : " "} `
+    ? `${
+        TCP
+          ? " -acodec aac -strict -2 -ar 48000 -ab 96k " //TCP
+          : ""
+      } ${_framerate} ${TCP ? "" : " "} `
     : ` -b:a ${BITRATE_A}k -c:v libx264 -pix_fmt yuv420p ${_framerate}`
 
   const _format = OFFLINE ? `${TCP ? "" : " -f mpegts"} ` : ` -f flv `
@@ -203,9 +206,11 @@ const startFFMPEG = rtmpUrl => {
         options: `${_options} ${_videoBitrate} ${_format}`,
         //output: `"rtmp://a.rtmp.youtube.com/live2/f5v7-kfmq-27ce-9dft"`, //`"${rtmpUrl}"`,
         output: OFFLINE
-          ? `${TCP
-              ? `"http://127.0.0.1:8080${TCP_STREAM_NAME}.ffm"` //TCP
-              : `"udp://${STREAM_IP}:${STREAM_PORT}"`}`
+          ? `${
+              TCP
+                ? `"http://127.0.0.1:8080${TCP_STREAM_NAME}.ffm"` //TCP
+                : `"udp://${STREAM_IP}:${STREAM_PORT}"`
+            }`
           : `"${rtmpUrl}"`,
       },
       { w: WIDTH, h: HEIGHT }
@@ -270,9 +275,8 @@ function start() {
 if (OFFLINE) {
   start()
 } else {
-  setTimeout(() => {
-  }, 15000)
-    start()
+  setTimeout(() => {}, 15000)
+  start()
 }
 
 console.log(`PRESS <ESCAPE> TO FINISH`)
