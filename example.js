@@ -35,7 +35,7 @@ const TCP_STREAM_NAME = "/webcam"
 var now = require("performance-now")
 
 const WEBCAM_IPS = ["192.168.1.76"] //, "10.0.1.3"//, "10.0.1.7"
-const STREAM_IP = "192.168.1.134"
+const STREAM_IP = "192.168.1.218"
 const STREAM_PORT = "1337"
 const web = WebcamWebsocketLegacy()
 
