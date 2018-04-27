@@ -19,7 +19,7 @@ const HEIGHT = 480*/
 const WIDTH = 352
 const HEIGHT = 288
 const AUDIO_INPUT_CHANNEL = ":3"
-const VIDEO_DIR = "_used"
+const VIDEO_DIR = ""
 //!!!!!!!!
 const OFFLINE = true
 const IS_PRIVATE = true
@@ -34,8 +34,8 @@ const TCP_STREAM_NAME = "/webcam"
 
 var now = require("performance-now")
 
-const WEBCAM_IPS = ["192.168.1.76"] //, "10.0.1.3"//, "10.0.1.7"
-const STREAM_IP = "192.168.1.134"
+const WEBCAM_IPS = ["192.168.1.160"] //, "10.0.1.3"//, "10.0.1.7"
+const STREAM_IP = "192.168.1.81"
 const STREAM_PORT = "1337"
 const web = WebcamWebsocketLegacy()
 
