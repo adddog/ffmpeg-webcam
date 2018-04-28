@@ -6,7 +6,7 @@ const raf = require("raf")
 var toBuffer = require("typedarray-to-buffer")
 const ffmpeg = require("./lib/ffmpeg")
 const WebcamWebsocket = require('./lib/webcam-websocket-regl')
-const WebcamWebsocketLegacy = require('./lib/webcam-websocket-legacy-regl')
+const WebcamWebsocketLegacy = require('./lib/webcam-websocket-legacy-regl-2')
 const FB = require("./lib/fb")
 const GL = require("./lib/gl")
 const KEYBOARD = require("./lib/keyboard")
@@ -19,7 +19,7 @@ const HEIGHT = 480*/
 const WIDTH = 352
 const HEIGHT = 288
 const AUDIO_INPUT_CHANNEL = ":3"
-const VIDEO_DIR = "_used"
+const VIDEO_DIR = ""
 //!!!!!!!!
 const OFFLINE = true
 const IS_PRIVATE = true
@@ -98,7 +98,8 @@ var handle = raf(function tick() {
           tex0: connections[0].player.pixels,
           overlay: VIDEO_TEX,
         })
-        FFMPEG.frame(toBuffer(gl.read(WIDTH, HEIGHT)))
+        FFMPEG.frame(toBuffer(connections[0].player.outputPixels))
+        //FFMPEG.frame(toBuffer(gl.read(WIDTH, HEIGHT)))
       }
     } else if (WEBCAM_IPS.length == 2) {
       if (
