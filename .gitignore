@@ -16,3 +16,4 @@ build
 *.zip
 *.3gp
 .DS_Store
+yarn.lock
