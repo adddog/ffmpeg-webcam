@@ -6,7 +6,7 @@ const raf = require("raf")
 var toBuffer = require("typedarray-to-buffer")
 const ffmpeg = require("./lib/ffmpeg")
 const WebcamWebsocket = require('./lib/webcam-websocket-regl')
-const WebcamWebsocketLegacy = require('./lib/webcam-websocket-legacy-regl-2')
+const WebcamWebsocketLegacy = require('./lib/webcam-websocket-legacy-regl')
 const FB = require("./lib/fb")
 const GL = require("./lib/gl")
 const KEYBOARD = require("./lib/keyboard")
@@ -22,6 +22,7 @@ const AUDIO_INPUT_CHANNEL = ":3"
 const VIDEO_DIR = ""
 //!!!!!!!!
 const OFFLINE = true
+const NO_AUDIO = true
 const IS_PRIVATE = true
 //!!!!!!!!
 const FB_PRIVACY = IS_PRIVATE ? "private" : "public"
@@ -198,13 +199,13 @@ const startFFMPEG = rtmpUrl => {
       {},
       {
         //input: [],
-        input: _audioInput,
+        input: NO_AUDIO ? [] : _audioInput,
         // input: OFFLINE
         //   ? null
         //   : ["-y", "-f", "avfoundation", "-i", ":3"],
         //input: ["-f", "alsa", "-ac", "1", "-ar", "44100" ,"-i", "hw:3"],
         //input: ["-i", "hw:1,0","-f alsa", "-ac", "2",],
-        options: `${_options} ${_videoBitrate} ${_format}`,
+        options: `${_options} ${_videoBitrate} ${_format} ${NO_AUDIO ? ' -an ':''}`,
         //output: `"rtmp://a.rtmp.youtube.com/live2/f5v7-kfmq-27ce-9dft"`, //`"${rtmpUrl}"`,
         output: OFFLINE
           ? `${
