@@ -22,8 +22,9 @@ const AUDIO_INPUT_CHANNEL = ":3";
 const VIDEO_DIR = "_used";
 //!!!!!!!!
 const USE_OMX = false;
-const PIPE_FFPLAY = true;
+const PIPE_FFPLAY = false;
 const NO_OVERLAY_VIDEO = true;
+const SAVE_TO_VIDEO = true;
 const OFFLINE = true;
 const NO_AUDIO = true;
 const IS_PRIVATE = true;
@@ -77,10 +78,21 @@ const gl = GL({
 const feedback = gl.regl.texture();
 
 const connections = WEBCAM_IPS.map(ip =>
-  web.connect(gl, ip, {
-    ip: STREAM_IP,
-    port: STREAM_PORT,
-  })
+  web.connect(
+    gl,
+    ip,
+    {
+      ip: STREAM_IP,
+      port: STREAM_PORT,
+    },
+    () => {
+       gl.drawSingleNoOverlay({
+            tex0: connections[0].player.pixels,
+          });
+       console.log('here');
+      FFMPEG.frame(toBuffer(gl.read(WIDTH, HEIGHT)));
+    }
+  )
 );
 
 let VIDEO_TEX;
@@ -168,24 +180,36 @@ var handle = raf(function tick() {
 */
 
 const startFFMPEG = rtmpUrl => {
-  const _videoBitrate = ` -preset ultrafast -tune zerolatency  -b:v ${BITRATE_V}k -minrate ${BITRATE_V /
-    2}k  -maxrate ${BITRATE_V}k  -bufsize ${BITRATE_V *
-    2}k ${NO_AUDIO ? ' -an  -analyzeduration 32 -probesize 32 ': ' -analyzeduration 1024 -probesize 512 '}`;
+  const _videoBitrate = ` -preset ultrafast -tune zerolatency -c:v libx264 -b:v ${BITRATE_V}k -minrate ${BITRATE_V /
+    2}k  -maxrate ${BITRATE_V}k -bufsize ${BITRATE_V * 2}k ${
+    NO_AUDIO
+      ? " -an -analyzeduration 1024 -probesize 512"
+      : " -analyzeduration 1024 -probesize 512 "
+  }`;
 
   //-fflags nobuffer
   const _framerate = `-g ${Math.round(
     FPS * 2
   )} -r ${FPS} -framerate ${FPS} `;
+
   const _options = OFFLINE
     ? `${
         TCP
           ? " -acodec aac -strict -2 -ar 48000 -ab 96k " //TCP
-          : ""
-      } ${_framerate} ${TCP ? "" : " "} `
-    : ` -b:a ${BITRATE_A}k -c:v libx264 -pix_fmt yuv420p ${_framerate}`;
+          : `${
+              USE_OMX
+                ? "-an -c:v libx264 -pix_fmt yuv420p"
+                : `-b:a ${BITRATE_A}k`
+            }`
+      } ${_framerate} `
+    : ` ${
+        USE_OMX
+          ? "-an -c:v libx264 -pix_fmt yuv420p"
+          : `-b:a ${BITRATE_A}k`
+      } -c:v libx264 -pix_fmt yuv420p ${_framerate}`;
 
   const _format = OFFLINE
-    ? `${TCP ? "" : " -f mpegts"} `
+    ? `${TCP ? "" : `${USE_OMX ? "-f flv" : " -f mpegts"}`} `
     : ` -f flv `;
 
   const _audioInput = NO_AUDIO
@@ -210,8 +234,12 @@ const startFFMPEG = rtmpUrl => {
           FPS,
         ];
 
-  const output = PIPE_FFPLAY
-    ? ` - | ${USE_OMX ? "omxplayer -b -r -" : "ffplay -"}`
+  let output = PIPE_FFPLAY
+    ? ` - | ${
+        USE_OMX
+          ? "omxplayer -b -r --no-keys -o hdmi pipe:0"
+          : "ffplay -"
+      }`
     : OFFLINE
       ? `${
           TCP
@@ -219,6 +247,10 @@ const startFFMPEG = rtmpUrl => {
             : `"udp://${STREAM_IP}:${STREAM_PORT}"`
         }`
       : `"${rtmpUrl}"`;
+
+  if (SAVE_TO_VIDEO) {
+    output = `-y test.mp4`;
+  }
   startStream(
     Object.assign(
       {},
@@ -294,7 +326,7 @@ function start() {
 }
 
 if (OFFLINE) {
-  start();
+  // start();
 } else {
   setTimeout(() => {}, 15000);
   start();
