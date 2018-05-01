@@ -21,10 +21,10 @@ const HEIGHT = 288;
 const AUDIO_INPUT_CHANNEL = ":3";
 const VIDEO_DIR = "_used";
 //!!!!!!!!
-const USE_OMX = false;
-const PIPE_FFPLAY = false;
+const USE_OMX = true;
+const PIPE_FFPLAY = true;
 const NO_OVERLAY_VIDEO = true;
-const SAVE_TO_VIDEO = true;
+const SAVE_TO_VIDEO = false;
 const OFFLINE = true;
 const NO_AUDIO = true;
 const IS_PRIVATE = true;
@@ -89,8 +89,7 @@ const connections = WEBCAM_IPS.map(ip =>
        gl.drawSingleNoOverlay({
             tex0: connections[0].player.pixels,
           });
-       console.log('here');
-      //FFMPEG.frame(toBuffer(gl.read(WIDTH, HEIGHT)));
+        FFMPEG.frame(toBuffer(gl.read(WIDTH, HEIGHT)));
     }
   )
 );
@@ -105,7 +104,9 @@ if (!NO_OVERLAY_VIDEO) {
 }
 
 var _t = now().toFixed(3);
+
 var handle = raf(function tick() {
+  return
   var start = now().toFixed(3);
 
   if (start - _t >= 22 && FFMPEG) {
@@ -169,6 +170,7 @@ var handle = raf(function tick() {
     } else {
     }
     _t = start;
+    console.log(_t);
   }
   raf(tick);
 });
@@ -326,7 +328,7 @@ function start() {
 }
 
 if (OFFLINE) {
-  // start();
+ start();
 } else {
   setTimeout(() => {}, 15000);
   start();
