@@ -90,7 +90,7 @@ const connections = WEBCAM_IPS.map(ip =>
             tex0: connections[0].player.pixels,
           });
        console.log('here');
-      FFMPEG.frame(toBuffer(gl.read(WIDTH, HEIGHT)));
+      //FFMPEG.frame(toBuffer(gl.read(WIDTH, HEIGHT)));
     }
   )
 );
