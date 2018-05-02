@@ -1,3 +1,4 @@
+var jpeg = require("jpeg-js");
 var toArrayBuffer = require("to-array-buffer");
 var tou8 = require("buffer-to-uint8array");
 var randomWord = require("random-word");
@@ -22,7 +23,7 @@ const AUDIO_INPUT_CHANNEL = ":3";
 const VIDEO_DIR = "_used";
 //!!!!!!!!
 const USE_OMX = false;
-const PIPE_FFPLAY = true;
+const PIPE_FFPLAY = false;
 const NO_OVERLAY_VIDEO = true;
 const SAVE_TO_VIDEO = false;
 const OFFLINE = true;
@@ -40,7 +41,7 @@ const TCP_STREAM_NAME = "/webcam";
 var now = require("performance-now");
 
 const WEBCAM_IPS = ["192.168.1.76"]; //, "10.0.1.3"//, "10.0.1.7"
-const STREAM_IP = "192.168.1.218";
+const STREAM_IP = "192.168.1.81";
 const STREAM_PORT = "1337";
 const web = WebcamWebsocketLegacy();
 
@@ -77,6 +78,7 @@ const gl = GL({
 
 const feedback = gl.regl.texture();
 
+var _ccc = 0;
 const connections = WEBCAM_IPS.map(ip =>
   web.connect(
     gl,
@@ -86,11 +88,31 @@ const connections = WEBCAM_IPS.map(ip =>
       port: STREAM_PORT,
     },
     () => {
-       /*gl.drawSingleNoOverlay({
-            tex0: connections[0].player.pixels,
-          });*/
-          console.log('log');
-        FFMPEG.frame(toBuffer(gl.read(WIDTH, HEIGHT)));
+     /* gl.drawSingleNoOverlay({
+        tex0: connections[0].player.pixels,
+      });*/
+      var b = toBuffer(gl.read(WIDTH, HEIGHT));
+      /*if (_ccc > 0) {
+        fs.writeFile(
+          `${_ccc}.jpeg`,
+          jpeg.encode(
+            {
+              data: b,
+              width: WIDTH,
+              height: HEIGHT,
+            },
+            50
+          ).data,
+          "base64",
+          err => {}
+        );
+      }*/
+      if (_ccc > 400) {
+       // FFMPEG.end();
+        //process.exit();
+      }
+      _ccc++;
+      FFMPEG.frame(b);
     }
   )
 );
@@ -107,7 +129,7 @@ if (!NO_OVERLAY_VIDEO) {
 var _t = now().toFixed(3);
 
 var handle = raf(function tick() {
-  return
+  return;
   var start = now().toFixed(3);
 
   if (start - _t >= 22 && FFMPEG) {
@@ -125,7 +147,7 @@ var handle = raf(function tick() {
             overlay: VIDEO_TEX,
           });
         }
-        FFMPEG.frame(toBuffer(gl.read(WIDTH, HEIGHT)));
+        //FFMPEG.frame(toBuffer(gl.read(WIDTH, HEIGHT)));
       }
     } else if (WEBCAM_IPS.length == 2) {
       if (
@@ -183,7 +205,7 @@ var handle = raf(function tick() {
 */
 
 const startFFMPEG = rtmpUrl => {
-  const _videoBitrate = ` -preset ultrafast -tune zerolatency -c:v libx264 -b:v ${BITRATE_V}k -minrate ${BITRATE_V /
+  const _videoBitrate = ` -movflags +faststart  -preset ultrafast -tune zerolatency -c:v libx264 -b:v ${BITRATE_V}k -minrate ${BITRATE_V /
     2}k  -maxrate ${BITRATE_V}k -bufsize ${BITRATE_V * 2}k ${
     NO_AUDIO
       ? " -an -analyzeduration 1024 -probesize 512"
@@ -212,7 +234,7 @@ const startFFMPEG = rtmpUrl => {
       } -c:v libx264 -pix_fmt yuv420p ${_framerate}`;
 
   const _format = OFFLINE
-    ? `${TCP ? "" : `${USE_OMX ? "-f flv" : " -f mpegts"}`} `
+    ? `${TCP ? "" : `${USE_OMX ? "-f mpegts" : " -f mpegts"}`} `
     : ` -f flv `;
 
   const _audioInput = NO_AUDIO
@@ -254,6 +276,7 @@ const startFFMPEG = rtmpUrl => {
   if (SAVE_TO_VIDEO) {
     output = `-y test.mp4`;
   }
+
   startStream(
     Object.assign(
       {},
@@ -329,7 +352,7 @@ function start() {
 }
 
 if (OFFLINE) {
- start();
+  start();
 } else {
   setTimeout(() => {}, 15000);
   start();
