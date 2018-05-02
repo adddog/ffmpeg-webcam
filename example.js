@@ -89,6 +89,7 @@ const connections = WEBCAM_IPS.map(ip =>
        /*gl.drawSingleNoOverlay({
             tex0: connections[0].player.pixels,
           });*/
+          console.log('log');
         FFMPEG.frame(toBuffer(gl.read(WIDTH, HEIGHT)));
     }
   )
