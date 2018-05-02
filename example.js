@@ -21,7 +21,7 @@ const HEIGHT = 288;
 const AUDIO_INPUT_CHANNEL = ":3";
 const VIDEO_DIR = "_used";
 //!!!!!!!!
-const USE_OMX = true;
+const USE_OMX = false;
 const PIPE_FFPLAY = true;
 const NO_OVERLAY_VIDEO = true;
 const SAVE_TO_VIDEO = false;
@@ -86,9 +86,9 @@ const connections = WEBCAM_IPS.map(ip =>
       port: STREAM_PORT,
     },
     () => {
-       gl.drawSingleNoOverlay({
+       /*gl.drawSingleNoOverlay({
             tex0: connections[0].player.pixels,
-          });
+          });*/
         FFMPEG.frame(toBuffer(gl.read(WIDTH, HEIGHT)));
     }
   )
