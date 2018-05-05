@@ -1,56 +1,56 @@
-var jpeg = require("jpeg-js");
-var toArrayBuffer = require("to-array-buffer");
-var tou8 = require("buffer-to-uint8array");
-var randomWord = require("random-word");
-const fs = require("fs");
-const raf = require("raf");
-var toBuffer = require("typedarray-to-buffer");
-const ffmpeg = require("./lib/ffmpeg");
-const WebcamWebsocket = require("./lib/webcam-websocket-regl");
-const WebcamWebsocketLegacy = require("./lib/webcam-websocket-legacy-regl");
-const FB = require("./lib/fb");
-const GL = require("./lib/gl");
-const KEYBOARD = require("./lib/keyboard");
-const VIDEO_OVERLAYS = require("./lib/video_overlays");
-const BITRATE_A = 128;
-const BITRATE_V = 400;
-const FPS = 30;
+var toArrayBuffer = require("to-array-buffer")
+var spawn = require("child_process").spawn;
+var tou8 = require("buffer-to-uint8array")
+var randomWord = require("random-word")
+const fs = require("fs")
+const raf = require("raf")
+var toBuffer = require("typedarray-to-buffer")
+const ffmpeg = require("./lib/ffmpeg")
+const WebcamWebsocket = require("./lib/webcam-websocket-regl")
+const WebcamWebsocketLegacy = require("./lib/webcam-websocket-legacy-regl")
+const FB = require("./lib/fb")
+const GL = require("./lib/gl")
+const KEYBOARD = require("./lib/keyboard")
+const VIDEO_OVERLAYS = require("./lib/video_overlays")
+const BITRATE_A = 128
+const BITRATE_V = 400
+const FPS = 30
 /*const WIDTH = 640
 const HEIGHT = 480*/
-const WIDTH = 352;
-const HEIGHT = 288;
-const AUDIO_INPUT_CHANNEL = ":3";
-const VIDEO_DIR = "_used";
+const WIDTH = 352
+const HEIGHT = 288
+const AUDIO_INPUT_CHANNEL = ":3"
+const VIDEO_DIR = "_used"
 //!!!!!!!!
-const USE_OMX = false;
-const PIPE_FFPLAY = false;
-const NO_OVERLAY_VIDEO = true;
-const SAVE_TO_VIDEO = false;
-const OFFLINE = true;
-const NO_AUDIO = true;
-const IS_PRIVATE = true;
+const USE_OMX = false
+const PIPE_FFPLAY = false
+const NO_OVERLAY_VIDEO = true
+const SAVE_TO_VIDEO = false
+const OFFLINE = true
+const NO_AUDIO = true
+const IS_PRIVATE = true
 //!!!!!!!!
-const FB_PRIVACY = IS_PRIVATE ? "private" : "public";
+const FB_PRIVACY = IS_PRIVATE ? "private" : "public"
 //SAM
 const FB_ACCESS_TOKEN =
-  "EAAXiyxq1MwkBAHI8Ydcaa0kDVDLnJlkmY751RVd3thLpwtoKqhKWhavwvPHoUyMh6YvQgR9Q8hxciR07BnrhAOGWHODghvEIkM3qO8N9gqXUq1mGMLWk58hRZBGHJ5fv6RmppKRVszXEktgeUCTzwi8O0hTsUXXkrYSqq0AZDZD";
+  "EAAXiyxq1MwkBAHI8Ydcaa0kDVDLnJlkmY751RVd3thLpwtoKqhKWhavwvPHoUyMh6YvQgR9Q8hxciR07BnrhAOGWHODghvEIkM3qO8N9gqXUq1mGMLWk58hRZBGHJ5fv6RmppKRVszXEktgeUCTzwi8O0hTsUXXkrYSqq0AZDZD"
 
-const TCP = false;
-const TCP_STREAM_NAME = "/webcam";
+const TCP = false
+const TCP_STREAM_NAME = "/webcam"
 
-var now = require("performance-now");
+var now = require("performance-now")
 
-const WEBCAM_IPS = ["192.168.1.76"]; //, "10.0.1.3"//, "10.0.1.7"
-const STREAM_IP = "192.168.1.81";
-const STREAM_PORT = "1337";
-const web = WebcamWebsocketLegacy();
+const WEBCAM_IPS = ["192.168.42.243"] //, "10.0.1.3"//, "10.0.1.7"
+const STREAM_IP = "192.168.42.218"
+const STREAM_PORT = "1337"
+const web = WebcamWebsocketLegacy()
 
-let FFMPEG;
+let FFMPEG
 function startStream(options) {
-  let maxrate = options.maxrate || 600;
+  let maxrate = options.maxrate || 600
   console.log(
     options.output || `"udp://${options.ip}:${options.port}"`
-  );
+  )
 
   FFMPEG = ffmpeg({
     ...options,
@@ -58,7 +58,7 @@ function startStream(options) {
     h: options.h,
     output: options.output,
     options: [`${options.options || ""} `],
-  });
+  })
 }
 
 /*const ff2 = web.connect(GL, WEBCAM_IP_2, {
@@ -69,16 +69,45 @@ function startStream(options) {
 const GL_UNIFORMS = {
   ...JSON.parse(fs.readFileSync("settings_backup.json", "utf-8")),
   ...JSON.parse(fs.readFileSync("settings.json", "utf-8")),
-};
+}
 
 const gl = GL({
   width: WIDTH,
   height: HEIGHT,
-});
+})
 
-const feedback = gl.regl.texture();
+const feedback = gl.regl.texture()
 
-var _ccc = 0;
+var _ccc = 0
+
+const IMG_COMMAND = [
+  "-depth",
+  "8",
+  "-size",
+  `${WIDTH}x${HEIGHT}`,
+  "rgba:-",
+  "JPEG:-",
+]
+const convertFast = (buffer, args = IMG_COMMAND, callback) => {
+  const stdout = []
+  var magick = spawn("convert", args)
+
+  magick.stdout.on("data", function(data) {
+    stdout.push(data)
+  })
+
+  magick.on("close", function(code) {
+    if (!code) {
+      callback(Buffer.concat(stdout))
+    }
+    stdout.length = 0
+    magick.kill()
+  })
+
+  magick.stdin.write(buffer)
+  magick.stdin.end()
+}
+
 const connections = WEBCAM_IPS.map(ip =>
   web.connect(
     gl,
@@ -88,10 +117,10 @@ const connections = WEBCAM_IPS.map(ip =>
       port: STREAM_PORT,
     },
     () => {
-     /* gl.drawSingleNoOverlay({
+      /* gl.drawSingleNoOverlay({
         tex0: connections[0].player.pixels,
       });*/
-      var b = toBuffer(gl.read(WIDTH, HEIGHT));
+      //var b = toBuffer(gl.read(WIDTH, HEIGHT));
       /*if (_ccc > 0) {
         fs.writeFile(
           `${_ccc}.jpeg`,
@@ -108,29 +137,35 @@ const connections = WEBCAM_IPS.map(ip =>
         );
       }*/
       if (_ccc > 400) {
-       // FFMPEG.end();
+        // FFMPEG.end();
         //process.exit();
       }
-      _ccc++;
-      FFMPEG.frame(b);
+      _ccc++
+      convertFast(
+        Buffer.from(gl.read(WIDTH, HEIGHT)),
+        IMG_COMMAND,
+        jpeg => {
+          FFMPEG.frame(jpeg)
+        }
+      )
     }
   )
-);
+)
 
-let VIDEO_TEX;
-let videoOverlays;
+let VIDEO_TEX
+let videoOverlays
 if (!NO_OVERLAY_VIDEO) {
-  VIDEO_TEX = gl.regl.texture();
+  VIDEO_TEX = gl.regl.texture()
   videoOverlays = VIDEO_OVERLAYS(VIDEO_TEX, {
     dir: `_videos/${VIDEO_DIR}`,
-  });
+  })
 }
 
-var _t = now().toFixed(3);
+var _t = now().toFixed(3)
 
 var handle = raf(function tick() {
-  return;
-  var start = now().toFixed(3);
+  return
+  var start = now().toFixed(3)
 
   if (start - _t >= 22 && FFMPEG) {
     //&& ff2.player.outBuffer
@@ -140,12 +175,12 @@ var handle = raf(function tick() {
         if (NO_OVERLAY_VIDEO) {
           gl.drawSingleNoOverlay({
             tex0: connections[0].player.pixels,
-          });
+          })
         } else {
           gl.drawSingle({
             tex0: connections[0].player.pixels,
             overlay: VIDEO_TEX,
-          });
+          })
         }
         //FFMPEG.frame(toBuffer(gl.read(WIDTH, HEIGHT)));
       }
@@ -184,19 +219,19 @@ var handle = raf(function tick() {
           uSaturations: GL_UNIFORMS.uSaturations,
           uBrightnesses: GL_UNIFORMS.uBrightnesses,
           uContrasts: GL_UNIFORMS.uContrasts,
-        });
+        })
         feedback({
           copy: true,
-        });
-        FFMPEG.frame(toBuffer(gl.read(WIDTH, HEIGHT)));
+        })
+        FFMPEG.frame(toBuffer(gl.read(WIDTH, HEIGHT)))
       }
     } else {
     }
-    _t = start;
-    console.log(_t);
+    _t = start
+    console.log(_t)
   }
-  raf(tick);
-});
+  raf(tick)
+})
 
 /*const ff = web.connect(gl, WEBCAM_IP_2, {
   ip: STREAM_IP,
@@ -208,14 +243,14 @@ const startFFMPEG = rtmpUrl => {
   const _videoBitrate = ` -movflags +faststart  -preset ultrafast -tune zerolatency -c:v libx264 -b:v ${BITRATE_V}k -minrate ${BITRATE_V /
     2}k  -maxrate ${BITRATE_V}k -bufsize ${BITRATE_V * 2}k ${
     NO_AUDIO
-      ? " -an -analyzeduration 1024 -probesize 512"
+      ? " -an -analyzeduration 256 -probesize 64"
       : " -analyzeduration 1024 -probesize 512 "
-  }`;
+  }`
 
   //-fflags nobuffer
   const _framerate = `-g ${Math.round(
     FPS * 2
-  )} -r ${FPS} -framerate ${FPS} `;
+  )} -r ${FPS} -framerate ${FPS} `
 
   const _options = OFFLINE
     ? `${
@@ -231,11 +266,11 @@ const startFFMPEG = rtmpUrl => {
         USE_OMX
           ? "-an -c:v libx264 -pix_fmt yuv420p"
           : `-b:a ${BITRATE_A}k`
-      } -c:v libx264 -pix_fmt yuv420p ${_framerate}`;
+      } -c:v libx264 -pix_fmt yuv420p ${_framerate}`
 
   const _format = OFFLINE
     ? `${TCP ? "" : `${USE_OMX ? "-f mpegts" : " -f mpegts"}`} `
-    : ` -f flv `;
+    : ` -f flv `
 
   const _audioInput = NO_AUDIO
     ? []
@@ -257,7 +292,7 @@ const startFFMPEG = rtmpUrl => {
           AUDIO_INPUT_CHANNEL,
           "-framerate",
           FPS,
-        ];
+        ]
 
   let output = PIPE_FFPLAY
     ? ` - | ${
@@ -271,10 +306,10 @@ const startFFMPEG = rtmpUrl => {
             ? `"http://127.0.0.1:8080${TCP_STREAM_NAME}.ffm"` //TCP
             : `"udp://${STREAM_IP}:${STREAM_PORT}"`
         }`
-      : `"${rtmpUrl}"`;
+      : `"${rtmpUrl}"`
 
   if (SAVE_TO_VIDEO) {
-    output = `-y test.mp4`;
+    output = `-y test.mp4`
   }
 
   startStream(
@@ -289,12 +324,13 @@ const startFFMPEG = rtmpUrl => {
         //input: ["-f", "alsa", "-ac", "1", "-ar", "44100" ,"-i", "hw:3"],
         //input: ["-i", "hw:1,0","-f alsa", "-ac", "2",],
         options: `${_options} ${_videoBitrate} ${_format}`,
+        //options: `${_options} ${_videoBitrate} ${_format}`,
         //output: `"rtmp://a.rtmp.youtube.com/live2/f5v7-kfmq-27ce-9dft"`, //`"${rtmpUrl}"`,
         output: output,
       },
       { w: WIDTH, h: HEIGHT }
     )
-  );
+  )
 
   const keyboard = KEYBOARD({
     GL_UNIFORMS,
@@ -302,12 +338,12 @@ const startFFMPEG = rtmpUrl => {
     FB_ACCESS_TOKEN,
     FFMPEG,
     WEBCAM_IPS,
-  });
-};
+  })
+}
 
 function start() {
   if (OFFLINE) {
-    startFFMPEG();
+    startFFMPEG()
   } else {
     var privacys = {
       public: "{'value':'EVERYONE'}",
@@ -315,10 +351,10 @@ function start() {
       friends_of_friends: "{'value':'FRIENDS_OF_FRIENDS'}",
       custom: "{'value':'CUSTOM', 'allow':'3205817'}",
       private: null,
-    };
-    console.log("------");
-    console.log(privacys[FB_PRIVACY]);
-    console.log("------");
+    }
+    console.log("------")
+    console.log(privacys[FB_PRIVACY])
+    console.log("------")
     FB.startLiveVideo({
       accessToken: FB_ACCESS_TOKEN,
       title: randomWord(),
@@ -328,14 +364,14 @@ function start() {
         "{'value':'CUSTOM',allow:'100009508046151,1751806573'}",*/
     })
       .then(liveVideo => {
-        var rtmpUrl = liveVideo.stream_url;
-        FB.postId = liveVideo.id;
+        var rtmpUrl = liveVideo.stream_url
+        FB.postId = liveVideo.id
 
-        startFFMPEG(rtmpUrl);
+        startFFMPEG(rtmpUrl)
       })
       .catch(error => {
-        console.error(error.message, error.options);
-      });
+        console.error(error.message, error.options)
+      })
   }
   setTimeout(() => {
     if (FB.postId) {
@@ -343,22 +379,22 @@ function start() {
         postId: FB.postId,
         accessToken: FB_ACCESS_TOKEN,
       }).then(r => {
-        process.exit();
-      });
+        process.exit()
+      })
     } else {
-      process.exit();
+      process.exit()
     }
-  }, 15 * 60 * 1000);
+  }, 15 * 60 * 1000)
 }
 
 if (OFFLINE) {
-  start();
+  start()
 } else {
-  setTimeout(() => {}, 15000);
-  start();
+  setTimeout(() => {}, 15000)
+  start()
 }
 
-console.log(`PRESS <ESCAPE> TO FINISH`);
+console.log(`PRESS <ESCAPE> TO FINISH`)
 
 //initWebgl()
 
