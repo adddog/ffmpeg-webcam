@@ -43,7 +43,7 @@ const TCP_STREAM_NAME = "/webcam"
 var now = require("performance-now")
 
 const WEBCAM_IPS = ["192.168.1.76"] //, "10.0.1.3"//, "10.0.1.7"
-const STREAM_IP = "192.168.1.81"
+const STREAM_IP = "192.168.1.134"
 const STREAM_PORT = "1337"
 const web = WebcamWebsocketLegacy()
 
@@ -329,7 +329,7 @@ const startFFMPEG = rtmpUrl => {
   let output = PIPE_FFPLAY
     ? ` - | ${
         USE_OMX
-          ? "omxplayer -b -r --no-keys -s -I -z --display 0 --timeout 60 --live -o hdmi pipe:0"
+          ? "omxplayer -b -r --no-keys -s -I -z --timeout 60 --live -o hdmi pipe:0"
           : "ffplay -"
       }`
     : OFFLINE
