@@ -25,7 +25,7 @@ const HEIGHT = 288
 const AUDIO_INPUT_CHANNEL = ":3"
 const VIDEO_DIR = "_used"
 //!!!!!!!!
-const USE_OMX = false
+const USE_OMX = true
 const PIPE_FFPLAY = true
 const NO_OVERLAY_VIDEO = true
 const SAVE_TO_VIDEO = false
@@ -126,8 +126,8 @@ const connections = WEBCAM_IPS.map(ip =>
         );
       }*/
       if (_ccc > 140) {
-        //FFMPEG.end();
-        //process.exit();
+      //  FFMPEG.end();
+    //    process.exit();
       }
       //fs.writeFileSync(`${_ccc}.rgba`, Buffer.from(gl.read(WIDTH, HEIGHT)))
       _ccc++
@@ -137,7 +137,7 @@ const connections = WEBCAM_IPS.map(ip =>
           Buffer.from(gl.read(WIDTH, HEIGHT)),
           IMG_COMMAND,
           jpeg => {
-            //fs.writeFileSync(`${_ccc}.png`, jpeg)
+            fs.writeFileSync(`${_ccc}.png`, jpeg)
             //console.log(jpeg);
               FFMPEG.frame(jpeg)
               _free = true
