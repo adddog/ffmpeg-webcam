@@ -1,3 +1,5 @@
+var cp = require("child_process")
+var spawnSync = require("child_process").spawnSync
 var toArrayBuffer = require("to-array-buffer")
 var spawn = require("child_process").spawn
 var spawnSync = require("child_process").spawnSync
@@ -24,7 +26,7 @@ const AUDIO_INPUT_CHANNEL = ":3"
 const VIDEO_DIR = "_used"
 //!!!!!!!!
 const USE_OMX = false
-const PIPE_FFPLAY = false
+const PIPE_FFPLAY = true
 const NO_OVERLAY_VIDEO = true
 const SAVE_TO_VIDEO = false
 const OFFLINE = true
@@ -41,7 +43,7 @@ const TCP_STREAM_NAME = "/webcam"
 
 var now = require("performance-now")
 
-const WEBCAM_IPS = ["192.168.1.76"] //, "10.0.1.3"//, "10.0.1.7"
+const WEBCAM_IPS = ["192.168.1.153"] //, "10.0.1.3"//, "10.0.1.7"
 const STREAM_IP = "192.168.1.134"
 const STREAM_PORT = "1337"
 const web = WebcamWebsocketLegacy()
@@ -87,29 +89,11 @@ const IMG_COMMAND = [
   "-size",
   `${WIDTH}x${HEIGHT}`,
   "rgba:-",
-  "PNG8:-",
+  "PNG24:-",
 ]
 const convertFast = (buffer, args = IMG_COMMAND, callback) => {
-  //const stdout = []
-  //var magick = spawn("convert", args)
   var magick = spawnSync("convert", args, { input: buffer })
   callback(magick.output[1])
-  //console.log(magick.output);
-  /*
-  magick.stdout.on("data", function(data) {
-    stdout.push(data)
-  })
-
-  magick.on("close", function(code) {
-    if (!code) {
-      callback(Buffer.concat(stdout))
-    }
-    stdout.length = 0
-    magick.kill()
-  })
-
-  magick.stdin.write(buffer)
-  magick.stdin.end()*/
 }
 
 let _free = true
@@ -309,7 +293,7 @@ const startFFMPEG = rtmpUrl => {
   let output = PIPE_FFPLAY
     ? ` - | ${
         USE_OMX
-          ? "omxplayer -b -r --no-keys -o hdmi pipe:0"
+          ? "omxplayer -b -r --no-keys -s -I -z --timeout 60 --live -o hdmi pipe:0"
           : "ffplay -"
       }`
     : OFFLINE
