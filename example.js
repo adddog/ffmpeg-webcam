@@ -17,7 +17,7 @@ const KEYBOARD = require("./lib/keyboard")
 const VIDEO_OVERLAYS = require("./lib/video_overlays")
 const BITRATE_A = 128
 const BITRATE_V = 600
-const FPS = 30
+const FPS = 4
 /*const WIDTH = 640
 const HEIGHT = 480*/
 const WIDTH = 352
@@ -89,7 +89,7 @@ const IMG_COMMAND = [
   "-size",
   `${WIDTH}x${HEIGHT}`,
   "rgba:-",
-  "PNG24:-",
+  "PNG8:-",
 ]
 const convertFast = (buffer, args = IMG_COMMAND, callback) => {
   var magick = spawnSync("convert", args, { input: buffer })
@@ -139,10 +139,10 @@ const connections = WEBCAM_IPS.map(ip =>
           jpeg => {
             //fs.writeFileSync(`${_ccc}.png`, jpeg)
             //console.log(jpeg);
-            setTimeout(function(){
               FFMPEG.frame(jpeg)
               _free = true
-            }, 10)
+            /*setTimeout(function(){
+            }, 250)*/
           }
         )
       }
@@ -241,7 +241,7 @@ const startFFMPEG = rtmpUrl => {
   const _videoBitrate = ` -movflags +faststart  -preset ultrafast -tune zerolatency -c:v libx264 -b:v ${BITRATE_V}k -minrate ${BITRATE_V /
     2}k  -maxrate ${BITRATE_V}k -bufsize ${BITRATE_V * 2}k ${
     NO_AUDIO
-      ? " -an -analyzeduration 256 -probesize 64"
+      ? " -an -analyzeduration 1024 -probesize 512"
       : " -analyzeduration 1024 -probesize 512 "
   }`
 
