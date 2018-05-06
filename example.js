@@ -1,5 +1,6 @@
 var toArrayBuffer = require("to-array-buffer")
-var spawn = require("child_process").spawn;
+var spawn = require("child_process").spawn
+var spawnSync = require("child_process").spawnSync
 var tou8 = require("buffer-to-uint8array")
 var randomWord = require("random-word")
 const fs = require("fs")
@@ -13,7 +14,7 @@ const GL = require("./lib/gl")
 const KEYBOARD = require("./lib/keyboard")
 const VIDEO_OVERLAYS = require("./lib/video_overlays")
 const BITRATE_A = 128
-const BITRATE_V = 400
+const BITRATE_V = 600
 const FPS = 30
 /*const WIDTH = 640
 const HEIGHT = 480*/
@@ -40,8 +41,8 @@ const TCP_STREAM_NAME = "/webcam"
 
 var now = require("performance-now")
 
-const WEBCAM_IPS = ["192.168.42.243"] //, "10.0.1.3"//, "10.0.1.7"
-const STREAM_IP = "192.168.42.218"
+const WEBCAM_IPS = ["192.168.1.76"] //, "10.0.1.3"//, "10.0.1.7"
+const STREAM_IP = "192.168.1.134"
 const STREAM_PORT = "1337"
 const web = WebcamWebsocketLegacy()
 
@@ -86,12 +87,15 @@ const IMG_COMMAND = [
   "-size",
   `${WIDTH}x${HEIGHT}`,
   "rgba:-",
-  "JPEG:-",
+  "PNG8:-",
 ]
 const convertFast = (buffer, args = IMG_COMMAND, callback) => {
-  const stdout = []
-  var magick = spawn("convert", args)
-
+  //const stdout = []
+  //var magick = spawn("convert", args)
+  var magick = spawnSync("convert", args, { input: buffer })
+  callback(magick.output[1])
+  //console.log(magick.output);
+  /*
   magick.stdout.on("data", function(data) {
     stdout.push(data)
   })
@@ -105,9 +109,10 @@ const convertFast = (buffer, args = IMG_COMMAND, callback) => {
   })
 
   magick.stdin.write(buffer)
-  magick.stdin.end()
+  magick.stdin.end()*/
 }
 
+let _free = true
 const connections = WEBCAM_IPS.map(ip =>
   web.connect(
     gl,
@@ -136,18 +141,25 @@ const connections = WEBCAM_IPS.map(ip =>
           err => {}
         );
       }*/
-      if (_ccc > 400) {
-        // FFMPEG.end();
+      if (_ccc > 140) {
+        //FFMPEG.end();
         //process.exit();
       }
+      //fs.writeFileSync(`${_ccc}.rgba`, Buffer.from(gl.read(WIDTH, HEIGHT)))
       _ccc++
-      convertFast(
-        Buffer.from(gl.read(WIDTH, HEIGHT)),
-        IMG_COMMAND,
-        jpeg => {
-          FFMPEG.frame(jpeg)
-        }
-      )
+      if (_free) {
+        _free = false
+        convertFast(
+          Buffer.from(gl.read(WIDTH, HEIGHT)),
+          IMG_COMMAND,
+          jpeg => {
+            //fs.writeFileSync(`${_ccc}.png`, jpeg)
+            //console.log(jpeg);
+            FFMPEG.frame(jpeg)
+            _free = true
+          }
+        )
+      }
     }
   )
 )
