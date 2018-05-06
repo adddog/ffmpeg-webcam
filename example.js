@@ -26,7 +26,7 @@ const AUDIO_INPUT_CHANNEL = ":3"
 const VIDEO_DIR = "_used"
 //!!!!!!!!
 const USE_OMX = false
-const PIPE_FFPLAY = false
+const PIPE_FFPLAY = true
 const NO_OVERLAY_VIDEO = true
 const SAVE_TO_VIDEO = false
 const OFFLINE = true
@@ -43,7 +43,7 @@ const TCP_STREAM_NAME = "/webcam"
 
 var now = require("performance-now")
 
-const WEBCAM_IPS = ["192.168.1.76"] //, "10.0.1.3"//, "10.0.1.7"
+const WEBCAM_IPS = ["192.168.1.154"] //, "10.0.1.3"//, "10.0.1.7"
 const STREAM_IP = "192.168.1.134"
 const STREAM_PORT = "1337"
 const web = WebcamWebsocketLegacy()
