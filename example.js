@@ -17,7 +17,7 @@ const KEYBOARD = require("./lib/keyboard")
 const VIDEO_OVERLAYS = require("./lib/video_overlays")
 const BITRATE_A = 128
 const BITRATE_V = 600
-const FPS = 4
+const FPS = 18
 /*const WIDTH = 640
 const HEIGHT = 480*/
 const WIDTH = 352
@@ -137,7 +137,7 @@ const connections = WEBCAM_IPS.map(ip =>
           Buffer.from(gl.read(WIDTH, HEIGHT)),
           IMG_COMMAND,
           jpeg => {
-            fs.writeFileSync(`${_ccc}.png`, jpeg)
+//            fs.writeFileSync(`${_ccc}.png`, jpeg)
             //console.log(jpeg);
               FFMPEG.frame(jpeg)
               _free = true
