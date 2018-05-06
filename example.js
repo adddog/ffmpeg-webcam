@@ -1,3 +1,5 @@
+var cp = require('child_process');
+var spawnSync = require("child_process").spawnSync
 var toArrayBuffer = require("to-array-buffer")
 var spawn = require("child_process").spawn;
 var tou8 = require("buffer-to-uint8array")
@@ -22,8 +24,8 @@ const HEIGHT = 288
 const AUDIO_INPUT_CHANNEL = ":3"
 const VIDEO_DIR = "_used"
 //!!!!!!!!
-const USE_OMX = false
-const PIPE_FFPLAY = false
+const USE_OMX = true
+const PIPE_FFPLAY = true
 const NO_OVERLAY_VIDEO = true
 const SAVE_TO_VIDEO = false
 const OFFLINE = true
@@ -40,8 +42,8 @@ const TCP_STREAM_NAME = "/webcam"
 
 var now = require("performance-now")
 
-const WEBCAM_IPS = ["192.168.42.243"] //, "10.0.1.3"//, "10.0.1.7"
-const STREAM_IP = "192.168.42.218"
+const WEBCAM_IPS = ["192.168.1.76"] //, "10.0.1.3"//, "10.0.1.7"
+const STREAM_IP = "192.168.1.81"
 const STREAM_PORT = "1337"
 const web = WebcamWebsocketLegacy()
 
@@ -86,28 +88,50 @@ const IMG_COMMAND = [
   "-size",
   `${WIDTH}x${HEIGHT}`,
   "rgba:-",
-  "JPEG:-",
+  "PNG24:-",
 ]
 const convertFast = (buffer, args = IMG_COMMAND, callback) => {
+var magick = spawnSync("convert", args, { input: buffer })
+//console.log(magick.output)
+  callback(magick.output[1])
+return
   const stdout = []
-  var magick = spawn("convert", args)
-
+var command = 'echo';
+console.log(buffer.length)
+  //var magick = spawn("convert", args, {shell:true})
+var magick = cp.spawnSync("convert", ['-version'])
+ var output = magick.output.toString();
+console.log(output)
   magick.stdout.on("data", function(data) {
+console.log('data');
+console.log(data);
     stdout.push(data)
   })
+magick.stderr.on("data", function(data) {
+    //stderr.push(data)
+console.log(data)
+  })
+
+magick.on('exit', function (code, signal) {
+  console.log('child process exited with ' +
+              `code ${code} and signal ${signal}`);
+});
 
   magick.on("close", function(code) {
     if (!code) {
       callback(Buffer.concat(stdout))
     }
+console.log(code)
     stdout.length = 0
     magick.kill()
   })
 
-  magick.stdin.write(buffer)
-  magick.stdin.end()
+ // magick.stdin.write(buffer)
+  //magick.stdin.end()
+console.log('writed');
 }
 
+let _free = true
 const connections = WEBCAM_IPS.map(ip =>
   web.connect(
     gl,
@@ -136,18 +160,26 @@ const connections = WEBCAM_IPS.map(ip =>
           err => {}
         );
       }*/
-      if (_ccc > 400) {
-        // FFMPEG.end();
-        //process.exit();
+      if (_ccc > 80) {
+//         FFMPEG.end();
+  //     process.exit();
       }
       _ccc++
+if(_free){
+_free = false;
+	//console.log(_ccc);
+//fs.writeFileSync(`${_ccc}.rgba`, Buffer.from(gl.read(WIDTH, HEIGHT)))
       convertFast(
         Buffer.from(gl.read(WIDTH, HEIGHT)),
         IMG_COMMAND,
         jpeg => {
+_free = true
+//console.log(jpeg.legnth);
+//	fs.writeFileSync(`${_ccc}.png`, jpeg);
           FFMPEG.frame(jpeg)
         }
       )
+}
     }
   )
 )
@@ -297,7 +329,7 @@ const startFFMPEG = rtmpUrl => {
   let output = PIPE_FFPLAY
     ? ` - | ${
         USE_OMX
-          ? "omxplayer -b -r --no-keys -o hdmi pipe:0"
+          ? "omxplayer -b -r --no-keys -s -I -z --display 0 --timeout 60 --live -o hdmi pipe:0"
           : "ffplay -"
       }`
     : OFFLINE
