@@ -25,7 +25,7 @@ const HEIGHT = 288
 const AUDIO_INPUT_CHANNEL = ":3"
 const VIDEO_DIR = "_used"
 //!!!!!!!!
-const USE_OMX = true
+const USE_OMX = false
 const PIPE_FFPLAY = true
 const NO_OVERLAY_VIDEO = true
 const SAVE_TO_VIDEO = false
@@ -139,10 +139,10 @@ const connections = WEBCAM_IPS.map(ip =>
           jpeg => {
 //            fs.writeFileSync(`${_ccc}.png`, jpeg)
             //console.log(jpeg);
+            setTimeout(function(){
               FFMPEG.frame(jpeg)
               _free = true
-            /*setTimeout(function(){
-            }, 250)*/
+            }, 20)
           }
         )
       }
