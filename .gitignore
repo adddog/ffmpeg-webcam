@@ -15,5 +15,7 @@ build
 *.MOV
 *.zip
 *.3gp
+*.part
+*.ytdl
 .DS_Store
 yarn.lock
